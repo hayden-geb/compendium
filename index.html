@@ -230,6 +230,7 @@
           const [currentNumberStyle, setCurrentNumberStyle] = useState('decimal');
           const [draggedNote, setDraggedNote] = useState(null);
           const [mapTimeOfDay, setMapTimeOfDay] = useState('day');
+          const [selectedLore, setSelectedLore] = useState(null);
           const editorRef = React.useRef(null);
 
           // Firebase sync for notes and folders
@@ -613,8 +614,78 @@
 
           const codexData = {
             lore: [
-              { title: "The Calamity", content: "Pending content." },
-              { title: "The Aetherfall", content: "Pending content." }
+              { 
+                title: "The Calamity", 
+                summary: "The first blood ever spilled on Issolas - and the unmaking that followed.",
+                narrative: `On a night the records describe only as moonless - though I wonder if the moon was truly absent or simply refusing to witness - she moved through corridors that seemed to cooperate with her silence. Her hands carried a sharpened bedpost.
+
+Her sister slept beyond the chamber door.
+
+Merida. The chosen. The image of Paladia's pride. I have found no physical descriptions of Merida, which strikes me as significant. She exists in the records only as a category: perfect, beloved, unblemished by doubt. Perhaps she was never a person at all. Perhaps she was a function. A role the city required someone to perform.
+
+Eridana looked at her sleeping sister, and what she felt was not tenderness.
+
+The records use the word revulsion, but I suspect this, too, is imprecise. What Eridana felt, I believe, was recognition - the unbearable recognition of something that had successfully become what she could not. The stake descended. Paradise began to leak.
+
+The first blood ever spilled on Issolas.
+
+Consider what that means. A world with no history of violence. A world where blood had never touched soil. The ecosystem was unprepared. The earth was unprepared. The very air was unprepared.
+
+The blood did not remain blood for long.
+
+It spread - not outward but through, permeating the ground, the atmosphere, the fundamental structure of what Issolas was. An unmaking. The kind of contamination that doesn't poison a system so much as rewrite its operating principles.
+
+The Six noticed.
+
+Their response came not as light, not as fire, but as a fissure - a shriek in the world's skin, a wound that opened from nowhere and led to nowhere. Paladia shattered. Its towers sublimated into ash that moved with deliberate patterns, forming shapes that almost resembled constellations before dispersing into randomness. Or what we call randomness, lacking the organs to perceive the order.
+
+The continent split. The world cracked open like an egg containing something that had outgrown it.
+
+In the ruin, the gods left a single fragment - the Aetherfall.`
+              },
+              { 
+                title: "The Aetherfall", 
+                summary: "A pillar of black glass rising from the wound, bearing words that resist understanding.",
+                narrative: `A pillar of black glass, later called the Aetherfall, rising from the wound. On its surface, carved in letters that seemed to shift when observed directly, four words:
+
+Light forgets faith forgotten
+
+I have spent considerable time with this phrase. Its grammar resists parsing. Light forgets: light as agent, light as something capable of memory and therefore capable of its loss. Faith forgotten: forgotten by whom? By the light? By those who held it? The sentence structure suggests that light's forgetting and faith's being forgotten are the same event, or perhaps the same substance differently expressed.
+
+The Aetherfall glowed with what survivors described as "the residue of fury." An obsidian truth. A meaning that demanded interpretation while actively resisting it.
+
+Centuries passed.
+
+I use that phrase loosely. Time moved differently in the aftermath, according to the fragmentary records. Some regions experienced years in what others experienced as weeks. Some places stopped experiencing time altogether and had to be avoided, their inhabitants frozen in postures of flight or prayer.
+
+But eventually, a pattern emerged. Two realms, growing like scar tissue around a wound.
+
+To the West: those who still trembled before the Six. They built shrines of ash and bone. Their rituals were not celebrations but apologies, extended across generations, a hereditary prostration before silence. They called themselves the Faithful, though faith seems inadequate to describe what drove them. Fear, perhaps. Or habit. Or the suspicion that stopping would be worse.
+
+To the East: the abandoned. They peeled away the divine mask - I find this phrase in multiple sources, always with the same unsettling precision - and looked elsewhere. To lesser gods. To voices hidden in marrow and stone. To powers that the Six had forbidden, or perhaps had never known existed. They sought vengeance not only against the absent gods but against the memory of reverence itself.
+
+Between them lay a broken archipelago.
+
+The fog around those islands is not natural fog. This becomes clear after even brief exposure. It moves against wind patterns. It responds to observation. Sailors who ventured into it reported that the mist seemed to contain shapes - vast structures barely visible, like cathedrals glimpsed through frosted glass - that rearranged themselves when attention shifted.
+
+The islands themselves were jagged as teeth. The reefs between them moved. Not drifted: moved. Deliberate rearrangements that seemed designed to cause exactly the shipwrecks that occurred.
+
+At the center of this aquatic maze stood the ruin of what had once been Paladia's Highcastle. And there, unchanged after centuries of exposure to salt and wind and that terrible, thinking fog: the Aetherfall.
+
+Black. Implacable. Radiating a silence that seemed to grow heavier the longer one remained near it.
+
+Many went to it. The records are clear on this.
+
+None returned whole. Most did not return at all.
+
+Rumor holds - and here I must acknowledge that rumor is the only source remaining for certain claims - that the carvings on the Aetherfall are not singular.
+
+That beneath "Light forgets faith forgotten" sleeps another phrase, carved in an older tongue. Older than the Six. Older than Issolas. Perhaps older than the concept of inscription itself.
+
+Some say this hidden language could repair the sundered world. Others say it could restore the favor of the gods. Still others - and these are the accounts that unsettle me most - suggest it could unmake the Six entirely. Not kill them. Unmake them. Retroactively erase the fact of their existence.
+
+In taverns where hearths burn too low, travelers trade fragments of stories about those who vanished into the fog. Their last words, reportedly, muttered of shapes carved deeper into the stone. A second text. A buried grammar. A meaning beneath.`
+              }
             ],
             pantheon: {
               theSix: [
@@ -1041,6 +1112,47 @@
                 .rarity-common { color: #4a6741; }
                 .rarity-uncommon { color: #2563eb; }
                 .rarity-rare { color: #9333ea; }
+                .lore-card {
+                  background: rgba(245, 236, 215, 0.8); border: 2px solid #8b7355; border-radius: 0.5rem;
+                  padding: 1.5rem; cursor: pointer; transition: all 0.3s; position: relative;
+                }
+                .lore-card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(139, 115, 85, 0.3); border-color: #d4af37; }
+                .lore-card h3 { font-family: 'Cinzel', serif; font-size: 1.5rem; font-weight: 600; color: #8b5a00; margin-bottom: 0.5rem; }
+                .lore-card p { font-family: 'Crimson Text', serif; font-size: 1rem; color: #5a4a3a; line-height: 1.5; }
+                .lore-card::after { content: 'Click to read'; position: absolute; bottom: 0.75rem; right: 1rem; font-family: 'Crimson Text', serif; font-size: 0.8rem; color: #8b7355; font-style: italic; opacity: 0; transition: opacity 0.3s; }
+                .lore-card:hover::after { opacity: 1; }
+                .lore-narrative-overlay {
+                  position: fixed; top: 0; left: 280px; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.85);
+                  z-index: 200; display: flex; align-items: center; justify-content: center; padding: 2rem;
+                  animation: fadeIn 0.3s ease;
+                }
+                @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+                .lore-narrative-container {
+                  background: linear-gradient(135deg, #f5ecd7 0%, #efe3cb 100%);
+                  border: 4px solid #8b7355; border-radius: 0.5rem; max-width: 800px; width: 100%;
+                  max-height: calc(100vh - 4rem); overflow-y: auto; position: relative;
+                  box-shadow: 0 0 0 2px #d4af37, 0 0 60px rgba(0, 0, 0, 0.5);
+                  animation: narrativeEnter 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+                }
+                @keyframes narrativeEnter { from { opacity: 0; transform: scale(0.9) translateY(20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+                .lore-narrative-header {
+                  position: sticky; top: 0; background: linear-gradient(135deg, #d4af37 0%, #8b7355 100%);
+                  padding: 1.5rem 2rem; border-bottom: 3px solid #8b7355; z-index: 10;
+                }
+                .lore-narrative-header h1 { font-family: 'Cinzel', serif; font-size: 2.5rem; font-weight: 700; color: #2d1810; text-align: center; margin: 0; }
+                .lore-narrative-close {
+                  position: absolute; top: 1rem; right: 1rem; width: 36px; height: 36px;
+                  background: rgba(45, 24, 16, 0.2); border: 2px solid #2d1810; border-radius: 50%;
+                  cursor: pointer; display: flex; align-items: center; justify-content: center;
+                  transition: all 0.3s; color: #2d1810;
+                }
+                .lore-narrative-close:hover { background: rgba(45, 24, 16, 0.4); transform: scale(1.1); }
+                .lore-narrative-content {
+                  padding: 2rem 3rem 3rem; font-family: 'Crimson Text', serif; font-size: 1.2rem;
+                  color: #2d1810; line-height: 2; white-space: pre-wrap;
+                }
+                .lore-narrative-content p { margin-bottom: 1.5rem; text-indent: 0; }
+                .lore-narrative-end { text-align: center; color: #8b7355; font-size: 1.5rem; margin-top: 2rem; }
                 .npc-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }
                 .npc-grid-item { padding: 0.5rem 0.75rem; background: rgba(245, 236, 215, 0.6); border: 1px solid #8b7355; border-radius: 0.25rem; text-align: center; font-family: 'Crimson Text', serif; font-size: 0.95rem; color: #2d1810; }
                 @media (max-width: 768px) {
@@ -1149,11 +1261,11 @@
                       {activeCodexSection === 'lore' ? 'Lore' : 'Pantheon'}
                     </h1>
                     {activeCodexSection === 'lore' && (
-                      <div className="max-w-4xl mx-auto">
+                      <div className="max-w-4xl mx-auto grid gap-6">
                         {codexData.lore.map((entry, index) => (
-                          <div key={index} className="codex-section">
-                            <h3 className="text-2xl font-bold text-amber-900 mb-3" style={{ fontFamily: 'Cinzel, serif' }}>{entry.title}</h3>
-                            <p className="text-lg text-amber-950 leading-relaxed" style={{ fontFamily: 'Crimson Text, serif' }}>{entry.content}</p>
+                          <div key={index} className="lore-card" onClick={() => setSelectedLore(entry)}>
+                            <h3>{entry.title}</h3>
+                            <p>{entry.summary}</p>
                           </div>
                         ))}
                       </div>
@@ -1419,7 +1531,7 @@
                         <>
                           <div className="flex-1 flex items-center justify-center">
                             <div className="text-center text-amber-700" style={{ fontFamily: 'Crimson Text, serif' }}>
-                              <p className="text-lg italic">Region information is displayed on the right.</p>
+                              <p className="text-lg italic">Missing field guide data for this region.</p>
                             </div>
                           </div>
                         </>
@@ -1554,6 +1666,24 @@
                       )}
 
                       <div className="mt-6 text-center text-amber-600 text-xs">◆</div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Lore Narrative Modal */}
+              {selectedLore && (
+                <div className="lore-narrative-overlay" onClick={() => setSelectedLore(null)}>
+                  <div className="lore-narrative-container" onClick={(e) => e.stopPropagation()}>
+                    <div className="lore-narrative-header">
+                      <h1>{selectedLore.title}</h1>
+                      <button className="lore-narrative-close" onClick={() => setSelectedLore(null)}>
+                        <X className="w-5 h-5" />
+                      </button>
+                    </div>
+                    <div className="lore-narrative-content">
+                      {selectedLore.narrative}
+                      <div className="lore-narrative-end">◆ ◆ ◆</div>
                     </div>
                   </div>
                 </div>

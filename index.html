@@ -1,0 +1,1478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Issolas Interactive Map</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script>
+        const firebaseConfig = {
+          apiKey: "AIzaSyDv7iAlojLPMLBMQ1ZflNzk92n15H4Injs",
+          authDomain: "issolas-9bbe1.firebaseapp.com",
+          projectId: "issolas-9bbe1",
+          storageBucket: "issolas-9bbe1.firebasestorage.app",
+          messagingSenderId: "959555555353",
+          appId: "1:959555555353:web:181c1eea7cc616dc029a88",
+          measurementId: "G-9KFVYB46VK"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        const googleProvider = new firebase.auth.GoogleAuthProvider();
+    </script>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+        
+        const X = ({ className }) => {
+            React.useEffect(() => {
+                lucide.createIcons();
+            });
+            return <i data-lucide="x" className={className}></i>;
+        };
+        
+        const MapPin = ({ className }) => {
+            React.useEffect(() => {
+                lucide.createIcons();
+            });
+            return <i data-lucide="map-pin" className={className}></i>;
+        };
+
+        const Skull = ({ className }) => {
+            React.useEffect(() => {
+                lucide.createIcons();
+            });
+            return <i data-lucide="skull" className={className}></i>;
+        };
+
+        // =============================================
+        // LOGIN SCREEN
+        // =============================================
+        const LoginScreen = ({ onLogin, error }) => (
+            <div className="min-h-screen bg-gradient-to-br from-amber-50 via-stone-100 to-amber-100 flex items-center justify-center">
+                <div className="bg-white bg-opacity-90 rounded-lg shadow-2xl p-8 max-w-md w-full mx-4" style={{ 
+                    border: '4px solid #8b7355',
+                    boxShadow: '0 0 0 2px #d4af37, 0 0 0 6px #8b7355, 0 20px 60px rgba(0, 0, 0, 0.3)'
+                }}>
+                    <div className="text-center mb-8">
+                        <h1 className="text-4xl font-bold text-amber-900 mb-2" style={{ fontFamily: 'Cinzel, serif' }}>Issolas</h1>
+                        <h2 className="text-2xl text-amber-800" style={{ fontFamily: 'Cinzel, serif' }}>Compendium</h2>
+                        <div className="flex items-center gap-3 mt-4">
+                            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-amber-600 to-transparent"></div>
+                            <div className="text-amber-600">◆</div>
+                            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-amber-600 to-transparent"></div>
+                        </div>
+                    </div>
+                    <p className="text-center text-amber-800 mb-6" style={{ fontFamily: 'Crimson Text, serif' }}>
+                        Sign in to access your adventure notes and the world compendium.
+                    </p>
+                    {error && (
+                        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 text-center" style={{ fontFamily: 'Crimson Text, serif' }}>
+                            {error}
+                        </div>
+                    )}
+                    <button onClick={onLogin} className="w-full flex items-center justify-center gap-3 px-6 py-3 bg-white border-2 border-amber-600 rounded-lg hover:bg-amber-50 transition-all duration-200 shadow-md hover:shadow-lg" style={{ fontFamily: 'Crimson Text, serif' }}>
+                        <svg className="w-6 h-6" viewBox="0 0 24 24">
+                            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                        </svg>
+                        <span className="text-lg text-gray-700">Sign in with Google</span>
+                    </button>
+                    <p className="text-center text-amber-600 text-sm mt-6" style={{ fontFamily: 'Crimson Text, serif' }}>
+                        Only authorized adventurers may enter.
+                    </p>
+                </div>
+            </div>
+        );
+
+        // =============================================
+        // ACCESS PENDING SCREEN
+        // =============================================
+        const AccessPendingScreen = ({ user, onLogout }) => (
+            <div className="min-h-screen bg-gradient-to-br from-amber-50 via-stone-100 to-amber-100 flex items-center justify-center">
+                <div className="bg-white bg-opacity-90 rounded-lg shadow-2xl p-8 max-w-md w-full mx-4 text-center" style={{ 
+                    border: '4px solid #8b7355',
+                    boxShadow: '0 0 0 2px #d4af37, 0 0 0 6px #8b7355, 0 20px 60px rgba(0, 0, 0, 0.3)'
+                }}>
+                    <h1 className="text-3xl font-bold text-amber-900 mb-4" style={{ fontFamily: 'Cinzel, serif' }}>Access Pending</h1>
+                    <div className="flex items-center gap-3 mb-6">
+                        <div className="flex-1 h-px bg-gradient-to-r from-transparent via-amber-600 to-transparent"></div>
+                        <div className="text-amber-600">◆</div>
+                        <div className="flex-1 h-px bg-gradient-to-r from-transparent via-amber-600 to-transparent"></div>
+                    </div>
+                    <p className="text-amber-800 mb-4" style={{ fontFamily: 'Crimson Text, serif' }}>
+                        Welcome, <strong>{user.displayName || user.email}</strong>
+                    </p>
+                    <p className="text-amber-700 mb-6" style={{ fontFamily: 'Crimson Text, serif' }}>
+                        Your account is awaiting approval from the Dungeon Master. Please check back later.
+                    </p>
+                    <button onClick={onLogout} className="px-6 py-2 bg-amber-100 border-2 border-amber-600 rounded-lg hover:bg-amber-200 transition-all" style={{ fontFamily: 'Crimson Text, serif' }}>
+                        Sign Out
+                    </button>
+                </div>
+            </div>
+        );
+
+        // =============================================
+        // LOADING SCREEN
+        // =============================================
+        const LoadingScreen = () => (
+            <div className="min-h-screen bg-gradient-to-br from-amber-50 via-stone-100 to-amber-100 flex items-center justify-center">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-16 w-16 border-4 border-amber-300 border-t-amber-600 mx-auto mb-4"></div>
+                    <p className="text-amber-800 text-xl" style={{ fontFamily: 'Cinzel, serif' }}>Loading...</p>
+                </div>
+            </div>
+        );
+
+        // =============================================
+        // MAIN APP WITH AUTH
+        // =============================================
+        const App = () => {
+            const [user, setUser] = useState(null);
+            const [userRole, setUserRole] = useState(null);
+            const [loading, setLoading] = useState(true);
+            const [authError, setAuthError] = useState(null);
+
+            useEffect(() => {
+                const unsubscribe = auth.onAuthStateChanged(async (firebaseUser) => {
+                    if (firebaseUser) {
+                        setUser(firebaseUser);
+                        try {
+                            const roleDoc = await db.collection('userRoles').doc(firebaseUser.uid).get();
+                            setUserRole(roleDoc.exists ? roleDoc.data().role : null);
+                        } catch (error) {
+                            console.error('Error fetching user role:', error);
+                            setUserRole(null);
+                        }
+                    } else {
+                        setUser(null);
+                        setUserRole(null);
+                    }
+                    setLoading(false);
+                });
+                return () => unsubscribe();
+            }, []);
+
+            const handleLogin = async () => {
+                try {
+                    setAuthError(null);
+                    await auth.signInWithPopup(googleProvider);
+                } catch (error) {
+                    console.error('Login error:', error);
+                    setAuthError('Failed to sign in. Please try again.');
+                }
+            };
+
+            const handleLogout = async () => {
+                try { await auth.signOut(); } catch (error) { console.error('Logout error:', error); }
+            };
+
+            if (loading) return <LoadingScreen />;
+            if (!user) return <LoginScreen onLogin={handleLogin} error={authError} />;
+            if (!userRole) return <AccessPendingScreen user={user} onLogout={handleLogout} />;
+            return <DnDInteractiveMap user={user} userRole={userRole} onLogout={handleLogout} />;
+        };
+
+        const DnDInteractiveMap = ({ user, userRole, onLogout }) => {
+          const [selectedLocation, setSelectedLocation] = useState(null);
+          const [hoveredNode, setHoveredNode] = useState(null);
+          const [currentMap, setCurrentMap] = useState('sirens-song');
+          const [activeTab, setActiveTab] = useState('cartographer');
+          const [activeCodexSection, setActiveCodexSection] = useState('lore');
+          const [activeFieldGuideTab, setActiveFieldGuideTab] = useState('flora');
+          const [noteCards, setNoteCards] = useState([]);
+          const [folders, setFolders] = useState([]);
+          const [notesLoading, setNotesLoading] = useState(true);
+          const [selectedFolder, setSelectedFolder] = useState(null);
+          const [isCreatingFolder, setIsCreatingFolder] = useState(false);
+          const [newFolderName, setNewFolderName] = useState('');
+          const [newFolderColor, setNewFolderColor] = useState('#d4af37');
+          const [editingFolderId, setEditingFolderId] = useState(null);
+          const [editingFolderName, setEditingFolderName] = useState('');
+          const [isCreatingNote, setIsCreatingNote] = useState(false);
+          const [currentNote, setCurrentNote] = useState({ title: '', content: '', folderId: null });
+          const [editingNoteId, setEditingNoteId] = useState(null);
+          const [currentBulletStyle, setCurrentBulletStyle] = useState('disc');
+          const [currentNumberStyle, setCurrentNumberStyle] = useState('decimal');
+          const [draggedNote, setDraggedNote] = useState(null);
+          const [mapTimeOfDay, setMapTimeOfDay] = useState('day');
+          const editorRef = React.useRef(null);
+
+          // Firebase sync for notes and folders
+          useEffect(() => {
+            if (!user) return;
+            const notesUnsub = db.collection('users').doc(user.uid).collection('notes')
+              .orderBy('createdAt', 'desc')
+              .onSnapshot((snap) => {
+                setNoteCards(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+                setNotesLoading(false);
+              }, (err) => { console.error('Notes error:', err); setNotesLoading(false); });
+            const foldersUnsub = db.collection('users').doc(user.uid).collection('folders')
+              .orderBy('createdAt', 'asc')
+              .onSnapshot((snap) => {
+                setFolders(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+              }, (err) => console.error('Folders error:', err));
+            return () => { notesUnsub(); foldersUnsub(); };
+          }, [user]);
+
+          useEffect(() => {
+            if (isCreatingNote && editorRef.current) {
+              editorRef.current.innerHTML = currentNote.content;
+            }
+          }, [isCreatingNote, editingNoteId]);
+
+          const createNewNote = () => {
+            setCurrentNote({ title: '', content: '', folderId: selectedFolder });
+            setEditingNoteId(null);
+            setIsCreatingNote(true);
+          };
+
+          const createFolder = async () => {
+            if (newFolderName.trim() && user) {
+              try {
+                await db.collection('users').doc(user.uid).collection('folders').add({
+                  name: newFolderName, color: newFolderColor,
+                  createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                setNewFolderName(''); setNewFolderColor('#d4af37'); setIsCreatingFolder(false);
+              } catch (e) { console.error('Create folder error:', e); }
+            }
+          };
+
+          const deleteFolder = async (id) => {
+            if (confirm('Delete this folder? Notes inside will not be deleted.')) {
+              try {
+                await db.collection('users').doc(user.uid).collection('folders').doc(id).delete();
+                if (selectedFolder === id) setSelectedFolder(null);
+              } catch (e) { console.error('Delete folder error:', e); }
+            }
+          };
+
+          const renameFolder = async (id, newName) => {
+            if (newName.trim()) {
+              try {
+                await db.collection('users').doc(user.uid).collection('folders').doc(id).update({ name: newName });
+                setEditingFolderId(null); setEditingFolderName('');
+              } catch (e) { console.error('Rename folder error:', e); }
+            }
+          };
+
+          const moveNoteToFolder = async (noteId, folderId) => {
+            try {
+              await db.collection('users').doc(user.uid).collection('notes').doc(noteId).update({ folderId });
+            } catch (e) { console.error('Move note error:', e); }
+          };
+
+          const saveNote = async () => {
+            try {
+              if (editingNoteId !== null) {
+                await db.collection('users').doc(user.uid).collection('notes').doc(editingNoteId).update({
+                  title: currentNote.title, content: currentNote.content, folderId: currentNote.folderId,
+                  updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+              } else {
+                await db.collection('users').doc(user.uid).collection('notes').add({
+                  title: currentNote.title, content: currentNote.content, folderId: currentNote.folderId,
+                  createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                  updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+              }
+              setIsCreatingNote(false); setCurrentNote({ title: '', content: '', folderId: null }); setEditingNoteId(null);
+            } catch (e) { console.error('Save note error:', e); }
+          };
+
+          const editNote = (note) => {
+            setCurrentNote({ title: note.title, content: note.content, folderId: note.folderId || null });
+            setEditingNoteId(note.id);
+            setIsCreatingNote(true);
+          };
+
+          const deleteNote = async (id) => {
+            if (confirm('Are you sure you want to delete this note?')) {
+              try {
+                await db.collection('users').doc(user.uid).collection('notes').doc(id).delete();
+              } catch (e) { console.error('Delete note error:', e); }
+            }
+          };
+
+          const applyFormat = (command, value = null) => {
+            editorRef.current?.focus();
+            document.execCommand(command, false, value);
+          };
+
+          const insertList = (type) => {
+            editorRef.current?.focus();
+            const selection = window.getSelection();
+            if (!selection.rangeCount) return;
+            const range = selection.getRangeAt(0);
+            let listElement = range.startContainer;
+            while (listElement && listElement !== editorRef.current) {
+              if (listElement.tagName === 'UL' || listElement.tagName === 'OL') break;
+              listElement = listElement.parentElement;
+            }
+            if (!listElement || listElement === editorRef.current || editorRef.current.innerHTML.trim() === '') {
+              const listTag = type === 'bullet' ? 'ul' : 'ol';
+              const newList = document.createElement(listTag);
+              const styleType = type === 'bullet' ? currentBulletStyle : currentNumberStyle;
+              newList.style.listStyleType = styleType;
+              const listItem = document.createElement('li');
+              listItem.innerHTML = '<br>';
+              newList.appendChild(listItem);
+              if (editorRef.current.innerHTML.trim() === '') {
+                editorRef.current.innerHTML = '';
+              }
+              editorRef.current.appendChild(newList);
+              const newRange = document.createRange();
+              newRange.setStart(listItem, 0);
+              newRange.collapse(true);
+              selection.removeAllRanges();
+              selection.addRange(newRange);
+            } else {
+              document.execCommand(type === 'bullet' ? 'insertUnorderedList' : 'insertOrderedList', false, null);
+              setTimeout(() => {
+                const styleType = type === 'bullet' ? currentBulletStyle : currentNumberStyle;
+                changeListStyle(styleType);
+              }, 0);
+            }
+            handleEditorInput({ currentTarget: editorRef.current });
+          };
+
+          const changeListStyle = (styleType) => {
+            editorRef.current?.focus();
+            const selection = window.getSelection();
+            if (!selection.rangeCount) return;
+            let listElement = selection.anchorNode;
+            while (listElement && listElement !== editorRef.current) {
+              if (listElement.tagName === 'UL' || listElement.tagName === 'OL') {
+                listElement.style.listStyleType = styleType;
+                break;
+              }
+              listElement = listElement.parentElement;
+            }
+            handleEditorInput({ currentTarget: editorRef.current });
+          };
+
+          const handleEditorInput = (e) => {
+            setCurrentNote({...currentNote, content: e.currentTarget.innerHTML});
+          };
+
+          const handleKeyDown = (e) => {
+            if (e.key === 'Tab') {
+              e.preventDefault();
+              e.stopPropagation();
+              const selection = window.getSelection();
+              if (!selection.rangeCount) return;
+              let listItem = null;
+              let node = selection.anchorNode;
+              for (let i = 0; i < 10 && node && node !== editorRef.current; i++) {
+                if (node.nodeType === Node.ELEMENT_NODE && node.tagName === 'LI') {
+                  listItem = node;
+                  break;
+                }
+                node = node.parentNode;
+              }
+              if (!listItem) return;
+              const parentList = listItem.parentElement;
+              if (!parentList || (parentList.tagName !== 'UL' && parentList.tagName !== 'OL')) return;
+              const isOrdered = parentList.tagName === 'OL';
+              if (e.shiftKey) {
+                const grandparentLI = parentList.closest('li');
+                if (grandparentLI) {
+                  const grandparentList = grandparentLI.parentElement;
+                  grandparentList.insertBefore(listItem, grandparentLI.nextSibling);
+                  if (parentList.children.length === 0) parentList.remove();
+                  handleEditorInput({ currentTarget: editorRef.current });
+                }
+              } else {
+                const previousSibling = listItem.previousElementSibling;
+                if (previousSibling && previousSibling.tagName === 'LI') {
+                  let nestedList = null;
+                  for (let child of previousSibling.children) {
+                    if (child.tagName === 'UL' || child.tagName === 'OL') {
+                      nestedList = child;
+                      break;
+                    }
+                  }
+                  if (!nestedList) {
+                    nestedList = document.createElement(parentList.tagName);
+                    const depth = getListDepth(previousSibling) + 1;
+                    const style = getListStyleForDepth(depth, isOrdered);
+                    nestedList.style.listStyleType = style;
+                    previousSibling.appendChild(nestedList);
+                  }
+                  const range = selection.getRangeAt(0);
+                  const cursorOffset = range.startOffset;
+                  const cursorNode = range.startContainer;
+                  nestedList.appendChild(listItem);
+                  try {
+                    const newRange = document.createRange();
+                    newRange.setStart(cursorNode, cursorOffset);
+                    newRange.collapse(true);
+                    selection.removeAllRanges();
+                    selection.addRange(newRange);
+                  } catch (e) {
+                    if (listItem.firstChild) {
+                      const newRange = document.createRange();
+                      newRange.setStart(listItem.firstChild, 0);
+                      newRange.collapse(true);
+                      selection.removeAllRanges();
+                      selection.addRange(newRange);
+                    }
+                  }
+                  handleEditorInput({ currentTarget: editorRef.current });
+                }
+              }
+              return;
+            }
+            if (e.key === 'Backspace') {
+              const selection = window.getSelection();
+              if (!selection.rangeCount) return;
+              const range = selection.getRangeAt(0);
+              let listItem = selection.anchorNode;
+              while (listItem && listItem !== editorRef.current) {
+                if (listItem.tagName === 'LI') break;
+                listItem = listItem.parentElement;
+              }
+              if (listItem && listItem.tagName === 'LI') {
+                const isAtStart = range.startOffset === 0 && 
+                                  (range.startContainer === listItem || range.startContainer === listItem.firstChild);
+                if (isAtStart) {
+                  e.preventDefault();
+                  const parentList = listItem.parentElement;
+                  const isNested = parentList.parentElement?.closest('li');
+                  if (isNested) {
+                    const grandparentList = parentList.parentElement?.closest('ul, ol');
+                    if (grandparentList) {
+                      const parentListItem = parentList.closest('li');
+                      grandparentList.insertBefore(listItem, parentListItem.nextSibling);
+                    }
+                  } else {
+                    if (listItem.textContent.trim() === '') {
+                      const paragraph = document.createElement('p');
+                      paragraph.innerHTML = '<br>';
+                      parentList.parentNode.insertBefore(paragraph, parentList);
+                      listItem.remove();
+                      if (parentList.children.length === 0) parentList.remove();
+                      const newRange = document.createRange();
+                      newRange.setStart(paragraph, 0);
+                      newRange.collapse(true);
+                      selection.removeAllRanges();
+                      selection.addRange(newRange);
+                    } else {
+                      const paragraph = document.createElement('p');
+                      paragraph.innerHTML = listItem.innerHTML;
+                      parentList.parentNode.insertBefore(paragraph, parentList);
+                      listItem.remove();
+                      if (parentList.children.length === 0) parentList.remove();
+                      const newRange = document.createRange();
+                      newRange.setStart(paragraph.firstChild, 0);
+                      newRange.collapse(true);
+                      selection.removeAllRanges();
+                      selection.addRange(newRange);
+                    }
+                  }
+                  handleEditorInput({ currentTarget: editorRef.current });
+                  return;
+                }
+              }
+            }
+            if (e.key === 'Enter') {
+              const selection = window.getSelection();
+              if (!selection.rangeCount) return;
+              let listItem = selection.anchorNode;
+              while (listItem && listItem !== editorRef.current) {
+                if (listItem.tagName === 'LI') {
+                  const textContent = listItem.textContent.trim();
+                  const hasNestedList = listItem.querySelector('ul, ol');
+                  if (textContent === '' && !hasNestedList) {
+                    e.preventDefault();
+                    const parentList = listItem.parentElement;
+                    const isNested = parentList.parentElement?.closest('li');
+                    if (isNested) {
+                      const grandparentList = parentList.parentElement?.closest('ul, ol');
+                      if (grandparentList) {
+                        const parentListItem = parentList.closest('li');
+                        const newItem = document.createElement('li');
+                        newItem.innerHTML = '<br>';
+                        grandparentList.insertBefore(newItem, parentListItem.nextSibling);
+                        listItem.remove();
+                        if (parentList.children.length === 0) parentList.remove();
+                        const range = document.createRange();
+                        range.setStart(newItem, 0);
+                        range.collapse(true);
+                        selection.removeAllRanges();
+                        selection.addRange(range);
+                      }
+                    } else {
+                      listItem.remove();
+                      const newPara = document.createElement('p');
+                      newPara.innerHTML = '<br>';
+                      parentList.parentNode.insertBefore(newPara, parentList.nextSibling);
+                      if (parentList.children.length === 0) parentList.remove();
+                      const range = document.createRange();
+                      range.setStart(newPara, 0);
+                      range.collapse(true);
+                      selection.removeAllRanges();
+                      selection.addRange(range);
+                    }
+                    handleEditorInput({ currentTarget: editorRef.current });
+                    return;
+                  }
+                  return;
+                }
+                listItem = listItem.parentElement;
+              }
+            }
+          };
+          
+          const getListDepth = (element) => {
+            let depth = 0;
+            let current = element;
+            while (current && current !== editorRef.current) {
+              if (current.tagName === 'UL' || current.tagName === 'OL') depth++;
+              current = current.parentElement;
+            }
+            return depth;
+          };
+          
+          const getListStyleForDepth = (depth, isOrdered) => {
+            if (isOrdered) {
+              const styles = ['decimal', 'lower-alpha', 'lower-roman', 'decimal'];
+              return styles[(depth - 1) % styles.length];
+            } else {
+              const styles = ['disc', 'circle', 'square', 'disc'];
+              return styles[(depth - 1) % styles.length];
+            }
+          };
+
+          const mapRegions = [
+            { id: 'world-overview', name: 'World Overview', category: 'Issolas', image: 'worldmaps/world_map.png' },
+            { id: 'sirens-song', name: "Siren's Song", category: 'Issolas', image: 'sirens_song_maps/sirens_song_map.png' },
+            { id: 'miligos', name: 'Miligos', category: 'Issolas', image: 'miligos_maps/miligos.png' }
+          ];
+
+          const activeMapData = mapRegions.find(map => map.id === currentMap);
+
+          const codexData = {
+            lore: [
+              { title: "The Calamity", content: "Pending content." },
+              { title: "Eridana", content: "Pending content." },
+              { title: "The Aetherfall", content: "Pending content." }
+            ],
+            pantheon: {
+              theSix: [
+                { name: "Paladine", title: "God of rulers and guardians", description: "Paladine the Platinum Dragon, is the draconic god of good dragons, the north wind and wisdom from the Draconic pantheon. Paladine is the embodiment of all that is good and great. He is the glorious and resplendent lord of good dragons who watches over and encourages his faithful, and serves as a bright and shining paragon of good in opposition to his bitter and twisted sister, Tiamat, the Chromatic Dragon.", domains: "Knowledge, Life", symbol: "Silver triangle", image: 'pantheon_icons/silver_triangle.png' },
+                { name: "Milil", title: "God of poetry and song", description: "Milil is the god of poetry, eloquence, and song. He is a god of creativity and inspiration, of the entire song more than just the lyrics or the music. He represents the finished thought, the result of the process that takes an idea from conception to realization. He is the ideal to which all performers aspire: poised and confident, winningly charismatic, and a source of inspiration for those who listen to him.", domains: "Knowledge", symbol: "Crystal ball containing many kinds of eyes", image: 'pantheon_icons/orb_of_eyes.png' },
+                { name: "Savras", title: "God of divination and fate", description: "Savras is the god of divination and fate, an aloof and inscrutable power who embodies the act of seeing beyond the present moment. To his faithful, Savras is not a god of answers freely given, but of truths revealed through discipline, sacrifice, and insight. He is revered by seers, oracles, astrologers, and those who seek to understand the hidden patterns that govern past, present, and future.", domains: "Light", symbol: "Five-stringed harp made of leaves", image: 'pantheon_icons/leaf_harp.png' },
+                { name: "Lliira", title: "Goddess of joy", description: "Lliira is the goddess of joy, celebration, freedom, and unrestrained emotion. She embodies the simple and profound truth that life is meant to be lived to the fullest, with passion and disregard for needless restraint. Where sorrow long lingers or tyranny smothers, Lliira's influence rises through laughter, dance, music, and acts of spontaneous kindness. The faith of Lliira teaches that joy is not frivolous, but sacred. Her dogma urges followers to celebrate life in all its forms and to remind others that happiness is a virtue worth defending.", domains: "Life", symbol: "Triangle of three-pointed stars", image: 'pantheon_icons/star_triangle.png' },
+                { name: "Eldath", title: "Goddess of peace", description: "Eldath is the goddess of peace, calm waters, and quiet places; she is gentle and contemplative, yet stands in opposition to violence. She represents serenity born of restraint and strength found in stillness. To her followers, peace is not weakness, but a deliberate and sacred choice. Eldath's priests and druids are healers. They inhabit hidden groves, springs, and pools where all may rest without fear, and where no weapon may be drawn in anger.", domains: "Life, Nature", symbol: "Waterfall plunging into still pool", image: 'pantheon_icons/waterfall.png' },
+                { name: "Sune", title: "Goddess of love and beauty", description: "Sune is the goddess of love, beauty, passion, and desire in all their forms. She celebrates all permutations of beauty observes the pursuit of pleasure as a sacred expression of life itself. To Sune and her faithful, love is a transformative force that inspires the innate faculties of the spirit, and all that is born of true passion is worthy of reverence.", domains: "Life, Light", symbol: "Face of a beautiful, red-haired woman", image: 'pantheon_icons/redheaded_woman.png' }
+              ],
+              lesserGods: [
+                { name: "Umberlee", title: "Goddess of the sea", description: "Umberlee is the cruel and capricious goddess of the sea. She is feared rather than loved, placated through offerings by sailor's hoping to earn the sea's favor. Umberlee teaches that the sea may not be tamed, and leverages its power as a force of dominance.", domains: "Tempest", symbol: "Wave curling left and right", image: 'pantheon_icons/twin_waves.png' },
+                { name: "Silvanus", title: "God of nature", description: "Silvanus is the primordial god of wild nature. He is the embodiment of the forest, its beasts, and the very cycles of life itself. He stands a stalwart guardian of the natural order, indifferent and often hostile to those who seek to tip life's balanced scales", domains: "Nature", symbol: "Oak leaf", image: 'pantheon_icons/oak_leaf.png' },
+                { name: "Talos", title: "God of storms", description: "Talos is the god of storms, embodying raw, senseless devastation. He believes destruction is the truest expression of power and his clergy oft revel in the chaos he brings. He is a horrible calamity.", domains: "Tempest", symbol: "Three lightning bolts radiating from a single point", image: 'pantheon_icons/lightning_triad.png' },
+                { name: "Mask", title: "God of thieves", description: "Mask is the god of shadows, deception, and theft, patron to thieves and spies. Mask excites the cunning and imaginative, pulling at the most insidious sides of mortal nature. He believes law exists only as an obstacle to the cunning, a challenge to be exploited for gain and expression of artistry.", domains: "Trickery", symbol: "Black mask", image: 'pantheon_icons/black_mask.png' },
+                { name: "Bhaal", title: "God of murder", description: "Bhaal is the god of murder; death given form. He revels in the act of killing - the planning, the execution. He upholds the doctrine that murder is the ultimate expression of control. To take a life is to elevate the self, and to please Bhaal.", domains: "Death", symbol: "Skull surrounded by a ring of blood droplets", image: 'pantheon_icons/blood_skull.png' },
+                { name: "Azuth", title: "God of wizards", description: "Azuth, the High One, is the god of wizards, arcana, and the disciplines of magic. He represents mastery earned through study and rigorous practice. Through discipline he managed to usurp Savras and claim dominion over the magical arts. Those who follow his path are arbiters of magical conduct, possessing both mastery in ability and restraint. ", domains: "Knowledge", symbol: "Left hand pointing upward, outlined in fire", image: 'pantheon_icons/flame_hand.png' },
+                { name: "Tymora", title: "Goddess of good fortune", description: "Tymora is the rush you feel when flipping a coin. She is the surge of generosity you feel when everything is going your way. She is a fortune that favors the bold and optimistic. 'Chance', to her, is merely an opportunity to seize an otherwise fleeting moment.", domains: "Trickery", symbol: "Face-up coin", image: 'pantheon_icons/face_up_coin.png' },
+                { name: "Kelemvor", title: "God of the dead", description: "Kelemvor is the solemn judge of the dead. He combs the seas of the damned, sternly parsing fear and corruption from his domain. Death is the natural continuation of a life deserving and to deny this continuity is to welcome a punishing damnation.", domains: "Death", symbol: "Upright skeletal arm holding balanced scales", image: 'pantheon_icons/scales.png' },
+                { name: "Gond", title: "God of craft", description: "Gond is the god of craft, artisanship, and the arts of creation. He is the embodiment of the craftsman, the artisan. Above all is progress and process; stagnation is sin. He invites the curious mind to celebrate innovation, experimentation, and the relentless pursuit of improvement.", domains: "Knowledge", symbol: "Toothed cog with four spokes", image: 'pantheon_icons/cog.png' },
+                { name: "Cyric", title: "God of lies", description: "Cyric delights in discord, madness, and strife. He is the suffering caused by broken trust and his influence spreads as quickly as a growing paranoia. His followers are dangerous and unpredictable, enforcing a dogma of chaos through falsehood.", domains: "Trickery", symbol: "White, jawless skull on black or purple sunburst", image: 'pantheon_icons/jawless_skull.png' },
+                { name: "Malar", title: "God of the hunt", description: "Malar is an apex predator. He is simple, savage, and ever-hungry. Outside of the constraints of civilization, survival becomes a question of one's instinct and dominance. To seek to answer this most primitive question is to seek the guiding hand of Malar.", domains: "Nature", symbol: "Clawed paw", image: 'pantheon_icons/paw.png' },
+                { name: "Shar", title: "Goddess of darkness and loss", description: "Shar is a goddess of deep complexity. She permeates the cavities of the mind, filling them with despair, loss, darkness, and the coaxing comforts of oblivion. She will offer solice through the erasure of what troubles you, lulling away your fears and memories.", domains: "Death, Trickery", symbol: "Black disk encircled with a border", image: 'pantheon_icons/black_disk.png' }
+              ]
+            }
+          };
+
+          const locationsByMap = {
+            'world-overview': [
+              {
+                id: 1,
+                name: "Siren's Song",
+                x: 13,
+                y: 20,
+                description: "Pending description.",
+                knownNPCs: [
+                  { name: "NPC Name" },
+                  { name: "NPC Name" },
+                  { name: "NPC Name" }
+                ],
+                history: "Pending historical information.",
+                population: { total: "Unknown", races: "Pending racial breakdown", density: "Pending" },
+                climate: { type: "Tropical", temperature: "Pending", precipitation: "Pending", seasons: "Pending" },
+                details: "Region: Mountains, Forests, Plains | Climate: Tropical | Notable:",
+                fieldGuide: {
+                  flora: [
+                    { name: "Moonpetal Orchid", description: "A luminescent flower that blooms only under moonlight, prized for its healing properties.", rarity: "Rare", habitat: "Dense forests" },
+                    { name: "Ironbark Tree", description: "Ancient trees with bark as hard as steel, used in shipbuilding.", rarity: "Common", habitat: "Coastal regions" },
+                    { name: "Whispergrass", description: "Tall grass that emits soft musical tones when wind passes through.", rarity: "Uncommon", habitat: "Plains and meadows" }
+                  ],
+                  fauna: [
+                    { name: "Crystalline Stag", description: "Majestic deer with antlers that shimmer like gemstones.", rarity: "Rare", habitat: "Mountain forests" },
+                    { name: "Tide Serpent", description: "Massive sea creatures that follow the currents, generally peaceful.", rarity: "Uncommon", habitat: "Coastal waters" },
+                    { name: "Ember Fox", description: "Small foxes with fur that glows faintly orange, resistant to fire.", rarity: "Common", habitat: "Volcanic regions" }
+                  ]
+                }
+              }
+            ],
+            'sirens-song': [
+              {
+                id: 1,
+                name: "Falkana",
+                x: 86,
+                y: 33,
+                description: "A small fishing town formed along the coastline of Umestris Bay - an inlet of the Northern Sea. Falkana is the northernmost point of civilization on Siren's Song.",
+                cityMap: 'sirens_song_maps/falkana.jpeg',
+                cityMapNight: 'sirens_song_maps/falkana_night.png', 
+                cityLocations: [
+                  { name: "Merchant Square", x: 50, y: 30 },
+                  { name: "Harbor", x: 40, y: 50 },
+                  { name: "Lighthouse", x: 56, y: 60 },
+                  { name: "Residential", x: 34, y: 78 },
+                  { name: "Vineyard", x: 84, y: 80 }
+                ],
+                knownNPCs: [
+                  { name: "Old Man Theodormus", title: "Cartographer", importance: "high" },
+                  { name: "Marigold Breeves", title: "Fishmonger", importance: "low" }
+                ],
+                history: "Pending historical information.",
+                population: { total: "200", races: "Primarily Human with Elven minority", density: "Sparse" },
+                climate: { type: "Coastal, Forest", temperature: "Mild year-round", precipitation: "Moderate rainfall", seasons: "Spring, Summer, Fall, Winter" },
+                details: "Population: 200 | NPCs: Theodormus Dawnscry, Marigold Breeves | Notable: First Visited Location"
+              },
+              {
+                id: 2,
+                name: "Mount Beala",
+                x: 20,
+                y: 41,
+                description: "An enormous igneous extrusion of rock with strange weather at the summit. Mount Beala is geothermally active but exhibits no geological evidence of eruption.",
+                geoMap: "sirens_song_maps/mount_beala.png",
+                knownNPCs: [],
+                history: "Pending historical information.",
+                population: { total: "Unknown", races: "Elementals", density: "Unknown" },
+                climate: { type: "Mountain", temperature: "Cold, snow-capped peak", precipitation: "Heavy snowfall at elevation", seasons: "Spring, Winter" },
+                details: "Geological Classification: Batholith | Geological Activity: Unknown | Age of Formation: Unknown"
+              },
+              {
+                id: 3,
+                name: "Artil",
+                x: 27,
+                y: 86,
+                description: "A large port town with multiple districts centered around fishing trades. Artil is the southernmost point of civilization on Siren's Song and bears the only port on the island, located at the mouth of the Sirenic River delta.",
+                cityMap: 'sirens_song_maps/artil.jpg', 
+                cityMapNight: 'sirens_song_maps/artil_night.jpg',
+                cityLocations: [
+                  { name: "Cathedral", x: 33, y: 56 },
+                  { name: "The Siren's Song", x: 49, y: 44 },
+                  { name: "Town Square", x: 49, y: 30 },
+                  { name: "Port District", x: 70, y: 57 },
+                  { name: "Academic District", x: 19, y: 55 },
+                  { name: "Residential District", x: 24, y: 29 },
+                  { name: "Shipyard", x: 50, y: 81 },
+                  { name: "Smithy", x: 35, y: 73 }
+                ],
+                knownNPCs: [
+                  { name: "Cassian Dawnscry", title: "Harbor Master", importance: "high" },
+                  { name: "Lady Syva Marina", title: "High Priestess", importance: "high" },
+                  { name: "Lazuli Brynn", title: "Innkeeper, Puzzler", importance: "medium" },
+                  { name: "Amethyst Brynn", title: "Innkeeper", importance: "low" },
+                  { name: "Yorlan Reinholt", title: "Fisherman", importance: "low" },
+                  { name: "Vigos Ashbourne", title: "Cook", importance: "low" }
+                ],
+                history: "",
+                population: { total: "2000", races: "Native: Humans, elves, dwarves, halflings", density: "Dense port town" },
+                climate: { type: "Coastal Temperate", temperature: "Mild with ocean breezes", precipitation: "Frequent light rain", seasons: "Spring, Summer, Fall, Winter" },
+                details: "Population: 2000 | NPCs: Cassian Dawnscry, Lazuli Brynn, Lady Syva Marina | Notable: Only port on Siren's Song"
+              }
+            ],
+            'miligos': [
+              {
+                id: 1,
+                name: "Port Milibra",
+                x: 18,
+                y: 50,
+                description: "Pending description.",
+                cityMap: 'miligos_maps/port_milibra.jpg', 
+                cityMapNight: 'miligos_maps/port_milibra_night.jpg',
+                knownNPCs: [
+                  { name: "NPC Name", title: "Title/Role", importance: "high" },
+                  { name: "NPC Name", title: "Title/Role", importance: "medium" }
+                ],
+                history: "Pending historical information.",
+                population: { total: "8000", races: "Native: Human, Half-orc, Half-elf, Dwarf, Gnome, Triton", density: "Extremely dense port city" },
+                climate: { type: "Coastal", temperature: "Pending", precipitation: "Frequent rain", seasons: "Spring, Summer, Fall, Winter" },
+                details: "Population: 8000 | Trade Hub: Major | Notable: Gateway to the east"
+              }
+            ]
+          };
+
+          const locations = locationsByMap[currentMap] || [];
+          const isWorldOverview = currentMap === 'world-overview';
+
+          const dungeonsByMap = {
+            'sirens-song': [
+              {
+                id: 'd1',
+                name: "The Bunker",
+                x: 55,
+                y: 35,
+                description: "A large, spherical structure buried in the Falkan forest, composed impossibly of organic tissue. Within the organism lay a misted corona of white phosphorescense outlining thick, fiberous vines. The vines lace together to form a latticework script: a kind of dark, incomprehensible sermon with its branching fragments sharing an affinity with that purpose. The script, written in abyssal, was not decipherable through the skill of your party.",
+                geoMap: 'sirens_song_maps/dungeons/bunker.png',
+                knownNPCs: [],
+                history: "From Theodormus: 'I found the bunker in a place just before the forest became waterlogged and turned to salt marsh, surrounded by a fringe of scrub grass, half-hidden by fallen moss off to the left of the trail: an oblate spheroid of some grayish stone seeming a mix of hard sediment and ground-up seashells. It measured roughly 50 feet in diameter, this circular block, and was raised from ground level by about a foot. Its surface remained clean of etchings or writings that could in any way identify its origin or purpose.'",
+                climate: { type: "Forest, Swamp", temperature: "Cool and damp"},
+                details: "Dungeon Type: Living organism | Danger Level: Medium | Notable: Gulthias seeds, Dark Sermon"
+              },
+              {
+                id: 'd2',
+                name: "Volcanic Cave",
+                x: 27,
+                y: 38,
+                description: "Presenting as a dark opening carved into the base of a volanic outcrop, its entrance is jagged and foreboding, framed by blackened rocks that glisten with moisture. The cave seems alive in its own way. The rocks around it bear scars of ancient eruptions - lava flow frozen mid-motion, veins of obsidian gleaming like shards of glass. From below comes a faint vibration, subtle but undeniable, as if the earth itself is breathing just below the surface. The cave is treacherous, inhospitable, and largely uncharted.",
+                geoMap: 'sirens_song_maps/dungeons/volcanic_cave.png',
+                knownNPCs: [],
+                history: "Unknown.",
+                climate: { type: "Mountain", temperature: "Extremely hot and dry"},
+                details: "Dungeon Type: Mountain cave | Danger Level: High | Notable: Cloak of Fire Walking"
+              }
+            ],
+            'miligos': [
+            ]
+          };
+
+          const dungeons = dungeonsByMap[currentMap] || [];
+
+          return (
+            <div className="w-full min-h-screen bg-gradient-to-br from-amber-50 via-stone-100 to-amber-100">
+              <style>{`
+                @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap');
+                
+                .parchment-bg {
+                  background-image: linear-gradient(rgba(245, 236, 215, 0.9), rgba(239, 227, 203, 0.9)),
+                    repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(139, 115, 85, 0.03) 2px, rgba(139, 115, 85, 0.03) 4px),
+                    repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(139, 115, 85, 0.03) 2px, rgba(139, 115, 85, 0.03) 4px);
+                  box-shadow: inset 0 2px 20px rgba(139, 115, 85, 0.2), 0 8px 30px rgba(0, 0, 0, 0.15);
+                }
+                .map-container {
+                  position: relative;
+                  border: 4px solid #8b7355;
+                  box-shadow: 0 0 0 2px #d4af37, 0 0 0 6px #8b7355, 0 20px 60px rgba(0, 0, 0, 0.4);
+                  display: inline-block;
+                }
+                .location-node { transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+                .location-node:hover { transform: scale(1.3); }
+                .dungeon-node { transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+                .dungeon-node:hover { transform: scale(1.3); }
+                .pulse-ring { animation: pulseRing 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+                .pulse-ring-dungeon { animation: pulseRingDungeon 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+                @keyframes pulseRing {
+                  0%, 100% { opacity: 1; transform: scale(1); }
+                  50% { opacity: 0; transform: scale(1.8); }
+                }
+                @keyframes pulseRingDungeon {
+                  0%, 100% { opacity: 1; transform: scale(1); }
+                  50% { opacity: 0; transform: scale(1.8); }
+                }
+                .modal-enter { animation: modalEnter 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+                @keyframes modalEnter {
+                  from { opacity: 0; transform: scale(0.8) translateY(20px); }
+                  to { opacity: 1; transform: scale(1) translateY(0); }
+                }
+                .ornate-border { border-image: linear-gradient(45deg, #8b7355, #d4af37, #8b7355) 1; border-width: 3px; border-style: solid; }
+                .modal-enter::-webkit-scrollbar { width: 12px; }
+                .modal-enter::-webkit-scrollbar-track { background: rgba(139, 115, 85, 0.2); border-radius: 10px; }
+                .modal-enter::-webkit-scrollbar-thumb { background: rgba(212, 175, 55, 0.6); border-radius: 10px; border: 2px solid rgba(245, 236, 215, 0.3); }
+                .modal-enter::-webkit-scrollbar-thumb:hover { background: rgba(212, 175, 55, 0.8); }
+                .text-shadow-gold { text-shadow: 2px 2px 4px rgba(212, 175, 55, 0.3); }
+                .sidebar {
+                  width: 280px; position: fixed; left: 0; top: 0; height: 100vh;
+                  background: linear-gradient(135deg, #2d1810 0%, #4a2c1a 100%);
+                  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.5); overflow-y: auto; z-index: 100;
+                }
+                .sidebar-header {
+                  background: linear-gradient(135deg, #d4af37 0%, #8b7355 100%);
+                  padding: 1.5rem 1rem; text-align: center; border-bottom: 3px solid #d4af37;
+                  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+                }
+                .sidebar-category {
+                  padding: 1rem 1.5rem 0.5rem; font-family: 'Cinzel', serif; font-size: 0.75rem;
+                  font-weight: 600; color: #d4af37; text-transform: uppercase; letter-spacing: 1px; margin-top: 1rem;
+                }
+                .sidebar-item {
+                  padding: 0.875rem 1.5rem; cursor: pointer; transition: all 0.3s ease;
+                  border-left: 3px solid transparent; font-family: 'Crimson Text', serif;
+                  font-size: 1.1rem; color: #f5e6d7;
+                }
+                .sidebar-item:hover { background: rgba(212, 175, 55, 0.15); border-left-color: #d4af37; padding-left: 2rem; }
+                .sidebar-item.active { background: rgba(212, 175, 55, 0.25); border-left-color: #d4af37; color: #d4af37; font-weight: 600; }
+                .main-content { margin-left: 280px; transition: margin-left 0.3s ease; }
+                .tab-button {
+                  padding: 0.875rem 1.5rem; cursor: pointer; transition: all 0.3s ease;
+                  border-left: 3px solid transparent; font-family: 'Cinzel', serif;
+                  font-size: 1.1rem; color: #f5e6d7; font-weight: 600;
+                }
+                .tab-button:hover { background: rgba(212, 175, 55, 0.15); border-left-color: #d4af37; padding-left: 2rem; }
+                .tab-button.active { background: rgba(212, 175, 55, 0.25); border-left-color: #d4af37; color: #d4af37; }
+                .content-container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+                .codex-section {
+                  background: rgba(245, 236, 215, 0.5); border: 2px solid #8b7355; border-radius: 0.5rem;
+                  padding: 1.5rem; margin-bottom: 1.5rem; opacity: 0; animation: fadeInScale 0.5s ease-out forwards;
+                }
+                .codex-section:nth-child(1) { animation-delay: 0.1s; }
+                .codex-section:nth-child(2) { animation-delay: 0.2s; }
+                .codex-section:nth-child(3) { animation-delay: 0.3s; }
+                @keyframes fadeInScale { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+                .codex-section:hover { transform: scale(1.02); box-shadow: 0 8px 20px rgba(139, 115, 85, 0.3); transition: all 0.3s ease; }
+                .editor-toolbar {
+                  background: rgba(139, 115, 85, 0.1); border: 2px solid #8b7355; border-radius: 0.5rem 0.5rem 0 0;
+                  padding: 0.75rem; display: flex; gap: 0.5rem; flex-wrap: nowrap; align-items: center;
+                  justify-content: center; overflow-x: auto;
+                }
+                .editor-button {
+                  padding: 0.5rem 0.75rem; background: rgba(212, 175, 55, 0.2); border: 1px solid #8b7355;
+                  border-radius: 0.25rem; cursor: pointer; transition: all 0.2s; font-family: 'Crimson Text', serif;
+                  font-size: 0.9rem; color: #2d1810; white-space: nowrap;
+                }
+                .editor-button:hover { background: rgba(212, 175, 55, 0.4); transform: translateY(-1px); }
+                .editor-select {
+                  padding: 0.5rem; background: rgba(245, 236, 215, 0.9); border: 1px solid #8b7355;
+                  border-radius: 0.25rem; font-family: 'Crimson Text', serif; color: #2d1810; cursor: pointer; font-size: 0.85rem;
+                }
+                .editor-content {
+                  min-height: 400px; max-height: 600px; padding: 1.5rem; background: rgba(245, 236, 215, 0.9);
+                  border: 3px solid #8b7355; border-top: none; border-radius: 0 0 0.5rem 0.5rem;
+                  font-family: 'Crimson Text', serif; font-size: 1.1rem; color: #2d1810; outline: none; overflow-y: auto;
+                }
+                .editor-content:focus { border-color: #d4af37; box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.2); }
+                .editor-content ul, .editor-content ol { margin: 0; padding-left: 0; }
+                .editor-content li { margin-left: 2.5em; padding-left: 0.5em; }
+                .note-card {
+                  background: rgba(245, 236, 215, 0.9); border: 2px solid #8b7355; border-radius: 0.5rem;
+                  padding: 1.5rem; cursor: pointer; transition: all 0.3s; position: relative;
+                  min-height: 200px; display: flex; flex-direction: column;
+                }
+                .note-card:hover { transform: translateY(-4px); box-shadow: 0 8px 20px rgba(139, 115, 85, 0.3); border-color: #d4af37; }
+                .note-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; margin-top: 1.5rem; }
+                .note-actions { display: flex; gap: 0.5rem; margin-top: auto; padding-top: 1rem; border-top: 1px solid #8b7355; }
+                .action-button {
+                  padding: 0.5rem 1rem; border: 1px solid #8b7355; border-radius: 0.25rem;
+                  cursor: pointer; transition: all 0.2s; font-family: 'Crimson Text', serif; font-size: 0.9rem;
+                }
+                .action-button.primary { background: rgba(212, 175, 55, 0.3); color: #2d1810; }
+                .action-button.danger { background: rgba(180, 60, 60, 0.2); color: #8b3333; }
+                .action-button:hover { transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2); }
+                .new-note-button {
+                  padding: 1rem 2rem; background: rgba(212, 175, 55, 0.3); border: 2px solid #d4af37;
+                  border-radius: 0.5rem; cursor: pointer; font-family: 'Cinzel', serif; font-size: 1.1rem;
+                  color: #2d1810; transition: all 0.3s; font-weight: 600;
+                }
+                .new-note-button:hover { background: rgba(212, 175, 55, 0.5); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(212, 175, 55, 0.4); }
+                .note-title-input {
+                  width: 100%; padding: 0.75rem; font-family: 'Cinzel', serif; font-size: 1.5rem;
+                  background: rgba(245, 236, 215, 0.9); border: 2px solid #8b7355; border-radius: 0.5rem;
+                  color: #2d1810; margin-bottom: 1rem;
+                }
+                .note-title-input:focus { outline: none; border-color: #d4af37; box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.2); }
+                .folder-sidebar {
+                  width: 250px; background: rgba(139, 115, 85, 0.1); border-right: 2px solid #8b7355;
+                  padding: 1rem; overflow-y: auto; max-height: calc(100vh - 2rem);
+                }
+                .folder-item {
+                  padding: 0.75rem 1rem; margin-bottom: 0.5rem; background: rgba(245, 236, 215, 0.5);
+                  border: 2px solid #8b7355; border-radius: 0.5rem; cursor: pointer; transition: all 0.3s;
+                  display: flex; align-items: center; gap: 0.5rem;
+                }
+                .folder-item:hover { background: rgba(212, 175, 55, 0.3); transform: translateX(4px); }
+                .folder-item.active { background: rgba(212, 175, 55, 0.4); border-color: #d4af37; }
+                .folder-item.drag-over { background: rgba(212, 175, 55, 0.6); border-color: #d4af37; border-style: dashed; }
+                .folder-color-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+                .folder-name { flex: 1; font-family: 'Crimson Text', serif; font-size: 1rem; color: #2d1810; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+                .folder-delete {
+                  padding: 0.25rem 0.5rem; background: rgba(180, 60, 60, 0.2); border: 1px solid #8b3333;
+                  border-radius: 0.25rem; cursor: pointer; font-size: 0.75rem; color: #8b3333; opacity: 0; transition: opacity 0.2s;
+                }
+                .folder-item:hover .folder-delete { opacity: 1; }
+                .folder-create {
+                  padding: 0.75rem; background: rgba(212, 175, 55, 0.2); border: 2px dashed #8b7355;
+                  border-radius: 0.5rem; cursor: pointer; text-align: center; font-family: 'Cinzel', serif;
+                  color: #2d1810; transition: all 0.3s;
+                }
+                .folder-create:hover { background: rgba(212, 175, 55, 0.3); border-color: #d4af37; }
+                .folder-input {
+                  width: 100%; padding: 0.5rem; font-family: 'Crimson Text', serif;
+                  background: rgba(245, 236, 215, 0.9); border: 2px solid #8b7355; border-radius: 0.25rem;
+                  color: #2d1810; margin-bottom: 0.5rem;
+                }
+                .folder-input:focus { outline: none; border-color: #d4af37; }
+                .folder-rename-input {
+                  flex: 1; padding: 0.25rem 0.5rem; font-family: 'Crimson Text', serif;
+                  background: rgba(245, 236, 215, 0.9); border: 2px solid #d4af37; border-radius: 0.25rem;
+                  color: #2d1810; font-size: 1rem;
+                }
+                .folder-rename-input:focus { outline: none; box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.3); }
+                .time-toggle {
+                  display: flex; align-items: center; gap: 0.5rem; padding: 0.25rem 0.75rem;
+                  background: rgba(139, 115, 85, 0.2); border: 2px solid #8b7355; border-radius: 1.5rem;
+                  margin-bottom: 0.75rem; justify-content: center;
+                }
+                .time-slider {
+                  position: relative; width: 40px; height: 20px;
+                  background: linear-gradient(to right, #4a5568, #1a202c); border-radius: 10px;
+                  cursor: pointer; transition: all 0.3s; border: 2px solid #8b7355;
+                }
+                .time-slider.day { background: linear-gradient(to right, #fbbf24, #f59e0b); }
+                .time-slider-thumb {
+                  position: absolute; top: 1px; left: 1px; width: 14px; height: 14px;
+                  background: white; border-radius: 50%; transition: all 0.3s; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+                }
+                .time-slider.day .time-slider-thumb { transform: translateX(20px); }
+                .time-label { font-family: 'Cinzel', serif; font-size: 0.7rem; color: #2d1810; font-weight: 600; min-width: 32px; text-align: center; }
+                .catalog-content { flex: 1; padding: 0 2rem; overflow-y: auto; }
+                .note-card.dragging { opacity: 0.5; cursor: move; }
+                .field-guide-tabs { display: flex; gap: 0; margin-bottom: 1rem; }
+                .field-guide-tab {
+                  flex: 1; padding: 0.75rem 1rem; background: rgba(139, 115, 85, 0.2);
+                  border: 2px solid #8b7355; cursor: pointer; font-family: 'Cinzel', serif;
+                  font-size: 1rem; font-weight: 600; color: #2d1810; text-align: center; transition: all 0.3s;
+                }
+                .field-guide-tab:first-child { border-radius: 0.5rem 0 0 0.5rem; border-right: none; }
+                .field-guide-tab:last-child { border-radius: 0 0.5rem 0.5rem 0; }
+                .field-guide-tab:hover { background: rgba(212, 175, 55, 0.3); }
+                .field-guide-tab.active { background: rgba(212, 175, 55, 0.5); border-color: #d4af37; color: #8b5a00; }
+                .field-guide-entry {
+                  background: rgba(245, 236, 215, 0.6); border: 2px solid #8b7355; border-radius: 0.5rem;
+                  padding: 1rem; margin-bottom: 0.75rem; transition: all 0.3s;
+                }
+                .field-guide-entry:hover { transform: translateX(4px); border-color: #d4af37; box-shadow: 0 4px 12px rgba(139, 115, 85, 0.2); }
+                .field-guide-entry h4 { font-family: 'Cinzel', serif; font-size: 1.1rem; font-weight: 600; color: #8b5a00; margin-bottom: 0.5rem; }
+                .field-guide-entry p { font-family: 'Crimson Text', serif; font-size: 0.95rem; color: #2d1810; margin-bottom: 0.5rem; line-height: 1.5; }
+                .field-guide-meta { display: flex; gap: 1rem; font-family: 'Crimson Text', serif; font-size: 0.85rem; color: #6b5a4a; }
+                .field-guide-meta span { display: flex; align-items: center; gap: 0.25rem; }
+                .rarity-common { color: #4a6741; }
+                .rarity-uncommon { color: #2563eb; }
+                .rarity-rare { color: #9333ea; }
+                .npc-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }
+                .npc-grid-item { padding: 0.5rem 0.75rem; background: rgba(245, 236, 215, 0.6); border: 1px solid #8b7355; border-radius: 0.25rem; text-align: center; font-family: 'Crimson Text', serif; font-size: 0.95rem; color: #2d1810; }
+                @media (max-width: 768px) {
+                  .sidebar { transform: translateX(-100%); }
+                  .sidebar.mobile-open { transform: translateX(0); }
+                  .main-content { margin-left: 0; }
+                  .folder-sidebar { width: 200px; }
+                  .npc-grid { grid-template-columns: repeat(2, 1fr); }
+                }
+              `}</style>
+
+              <aside className="sidebar">
+                <div className="sidebar-header">
+                  <h2 className="text-2xl font-bold text-amber-900" style={{ fontFamily: 'Cinzel, serif' }}>Compendium</h2>
+                </div>
+                {/* User Info */}
+                <div className="px-4 py-3 border-b border-amber-800 bg-gradient-to-r from-amber-900/20 to-transparent">
+                  <div className="flex items-center gap-3">
+                    {user.photoURL && <img src={user.photoURL} alt="" className="w-8 h-8 rounded-full border-2 border-amber-600" />}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-amber-200 text-sm truncate" style={{ fontFamily: 'Crimson Text, serif' }}>{user.displayName || user.email}</p>
+                      <p className="text-amber-500 text-xs capitalize" style={{ fontFamily: 'Cinzel, serif' }}>{userRole}</p>
+                    </div>
+                  </div>
+                  <button onClick={onLogout} className="mt-2 w-full text-xs text-amber-400 hover:text-amber-200 transition-colors py-1" style={{ fontFamily: 'Crimson Text, serif' }}>Sign Out</button>
+                </div>
+                <div className={`tab-button ${activeTab === 'cartographer' ? 'active' : ''}`} onClick={() => setActiveTab('cartographer')}>Cartographer</div>
+                <div className={`tab-button ${activeTab === 'codex' ? 'active' : ''}`} onClick={() => setActiveTab('codex')}>Codex</div>
+                <div className={`tab-button ${activeTab === 'catalog' ? 'active' : ''}`} onClick={() => setActiveTab('catalog')}>Catalog</div>
+
+                {activeTab === 'cartographer' && (
+                  <>
+                    <div className="sidebar-category">Issolas</div>
+                    {mapRegions.filter(region => region.category === 'Issolas').map(region => (
+                      <div key={region.id} className={`sidebar-item ${currentMap === region.id ? 'active' : ''}`}
+                        onClick={() => { setCurrentMap(region.id); setSelectedLocation(null); }}>
+                        {region.name}
+                      </div>
+                    ))}
+                  </>
+                )}
+                {activeTab === 'codex' && (
+                  <>
+                    <div className="sidebar-category">Sections</div>
+                    <div className={`sidebar-item ${activeCodexSection === 'lore' ? 'active' : ''}`} onClick={() => setActiveCodexSection('lore')}>Lore</div>
+                    <div className={`sidebar-item ${activeCodexSection === 'pantheon' ? 'active' : ''}`} onClick={() => setActiveCodexSection('pantheon')}>Pantheon</div>
+                  </>
+                )}
+              </aside>
+
+              <div className="main-content p-4">
+                {activeTab === 'cartographer' && (
+                  <div className="w-full h-[calc(100vh-2rem)] flex justify-center items-center">
+                    <div className="map-container rounded-lg overflow-hidden inline-block max-w-full max-h-[calc(100vh-2rem)]">
+                      <img src={activeMapData.image} alt={`${activeMapData.name} Map`}
+                        className="block w-auto h-auto max-w-full max-h-[calc(100vh-2rem)] object-contain" style={{ display: 'block' }} />
+                      <div className="absolute inset-0 pointer-events-none"></div>
+                      {locations.map((location) => (
+                        <div key={location.id} className="absolute location-node cursor-pointer pointer-events-auto"
+                          style={{ left: `${location.x}%`, top: `${location.y}%`, transform: 'translate(-50%, -50%)' }}
+                          onClick={() => { setSelectedLocation(location); setActiveFieldGuideTab('flora'); }}
+                          onMouseEnter={() => setHoveredNode(location.id)} onMouseLeave={() => setHoveredNode(null)}>
+                          {hoveredNode === location.id && (
+                            <div className="absolute inset-0 pulse-ring"><div className="w-12 h-12 rounded-full border-4 border-amber-600 opacity-50"></div></div>
+                          )}
+                          <div className="relative">
+                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-600 to-amber-800 border-4 border-amber-200 shadow-lg flex items-center justify-center">
+                              <MapPin className="w-6 h-6 text-amber-50" />
+                            </div>
+                            {hoveredNode === location.id && (
+                              <div className="absolute top-full mt-2 left-1/2 transform -translate-x-1/2 whitespace-nowrap">
+                                <div className="bg-amber-900 text-amber-50 px-3 py-1 rounded shadow-lg text-sm" style={{ fontFamily: 'Cinzel, serif' }}>{location.name}</div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                      {!isWorldOverview && dungeons.map((dungeon) => (
+                        <div key={dungeon.id} className="absolute dungeon-node cursor-pointer pointer-events-auto"
+                          style={{ left: `${dungeon.x}%`, top: `${dungeon.y}%`, transform: 'translate(-50%, -50%)' }}
+                          onClick={() => { setSelectedLocation(dungeon); setActiveFieldGuideTab('flora'); }}
+                          onMouseEnter={() => setHoveredNode(dungeon.id)} onMouseLeave={() => setHoveredNode(null)}>
+                          {hoveredNode === dungeon.id && (
+                            <div className="absolute inset-0 pulse-ring-dungeon"><div className="w-12 h-12 rounded-full border-4 border-slate-500 opacity-50"></div></div>
+                          )}
+                          <div className="relative">
+                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-slate-500 to-slate-700 border-4 border-slate-300 shadow-lg flex items-center justify-center">
+                              <Skull className="w-6 h-6 text-slate-100" />
+                            </div>
+                            {hoveredNode === dungeon.id && (
+                              <div className="absolute top-full mt-2 left-1/2 transform -translate-x-1/2 whitespace-nowrap">
+                                <div className="bg-slate-800 text-slate-100 px-3 py-1 rounded shadow-lg text-sm" style={{ fontFamily: 'Cinzel, serif' }}>{dungeon.name}</div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {activeTab === 'codex' && (
+                  <div className="overflow-y-auto h-[calc(100vh-2rem)]" style={{ paddingRight: '1rem' }}>
+                    <div className="content-container">
+                    <h1 className="text-5xl font-bold text-amber-900 mb-8 text-center text-shadow-gold" style={{ fontFamily: 'Cinzel, serif' }}>
+                      {activeCodexSection === 'lore' ? 'Lore' : 'Pantheon'}
+                    </h1>
+                    {activeCodexSection === 'lore' && (
+                      <div className="max-w-4xl mx-auto">
+                        {codexData.lore.map((entry, index) => (
+                          <div key={index} className="codex-section">
+                            <h3 className="text-2xl font-bold text-amber-900 mb-3" style={{ fontFamily: 'Cinzel, serif' }}>{entry.title}</h3>
+                            <p className="text-lg text-amber-950 leading-relaxed" style={{ fontFamily: 'Crimson Text, serif' }}>{entry.content}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {activeCodexSection === 'pantheon' && (
+                      <div className="max-w-6xl mx-auto">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                          {/* The Six Column */}
+                          <div>
+                            <h2 className="text-3xl font-bold text-amber-900 mb-6 text-center" style={{ fontFamily: 'Cinzel, serif' }}>The Six</h2>
+                            {codexData.pantheon.theSix.map((deity, index) => (
+                              <div key={index} className="codex-section">
+                                <div className="flex gap-4 mb-3" style={{ minHeight: '120px' }}>
+                                  <div className="flex-1 flex flex-col justify-between">
+                                    <div>
+                                      <h3 className="text-2xl font-bold text-amber-900 mb-1" style={{ fontFamily: 'Cinzel, serif' }}>{deity.name}</h3>
+                                      <h4 className="text-lg text-amber-800 mb-2 italic" style={{ fontFamily: 'Crimson Text, serif' }}>{deity.title}</h4>
+                                    </div>
+                                    <div className="text-sm text-amber-800" style={{ fontFamily: 'Crimson Text, serif' }}>
+                                      <p><strong>Domains:</strong> {deity.domains}</p>
+                                      <p><strong>Symbol:</strong> {deity.symbol}</p>
+                                    </div>
+                                  </div>
+                                  {deity.image && (
+                                    <div className="flex-shrink-0">
+                                      <img src={deity.image} alt={deity.name} className="w-28 h-28 object-cover rounded-lg border-2 border-amber-700" />
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="h-px bg-gradient-to-r from-amber-600 via-amber-400 to-amber-600 mb-3"></div>
+                                <p className="text-amber-950 leading-relaxed" style={{ fontFamily: 'Crimson Text, serif', fontSize: '0.95rem' }}>{deity.description}</p>
+                              </div>
+                            ))}
+                          </div>
+                          {/* Lesser Gods Column */}
+                          <div>
+                            <h2 className="text-3xl font-bold text-amber-900 mb-6 text-center" style={{ fontFamily: 'Cinzel, serif' }}>Lesser Gods</h2>
+                            {codexData.pantheon.lesserGods.map((deity, index) => (
+                              <div key={index} className="codex-section">
+                                <div className="flex gap-4 mb-3" style={{ minHeight: '120px' }}>
+                                  <div className="flex-1 flex flex-col justify-between">
+                                    <div>
+                                      <h3 className="text-2xl font-bold text-amber-900 mb-1" style={{ fontFamily: 'Cinzel, serif' }}>{deity.name}</h3>
+                                      <h4 className="text-lg text-amber-800 mb-2 italic" style={{ fontFamily: 'Crimson Text, serif' }}>{deity.title}</h4>
+                                    </div>
+                                    <div className="text-sm text-amber-800" style={{ fontFamily: 'Crimson Text, serif' }}>
+                                      <p><strong>Domains:</strong> {deity.domains}</p>
+                                      <p><strong>Symbol:</strong> {deity.symbol}</p>
+                                    </div>
+                                  </div>
+                                  {deity.image && (
+                                    <div className="flex-shrink-0">
+                                      <img src={deity.image} alt={deity.name} className="w-28 h-28 object-cover rounded-lg border-2 border-amber-700" />
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="h-px bg-gradient-to-r from-amber-600 via-amber-400 to-amber-600 mb-3"></div>
+                                <p className="text-amber-950 leading-relaxed" style={{ fontFamily: 'Crimson Text, serif', fontSize: '0.95rem' }}>{deity.description}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    </div>
+                  </div>
+                )}
+
+                {activeTab === 'catalog' && (
+                  <div className="flex h-[calc(100vh-2rem)]">
+                    <div className="folder-sidebar">
+                      <h2 className="text-xl font-bold text-amber-900 mb-4 text-center" style={{ fontFamily: 'Cinzel, serif' }}>Folders</h2>
+                      <div className={`folder-item ${selectedFolder === null ? 'active' : ''}`} onClick={() => setSelectedFolder(null)}>
+                        <div className="folder-color-dot" style={{ background: '#8b7355' }}></div>
+                        <span className="folder-name">All Notes</span>
+                      </div>
+                      {folders.map((folder) => (
+                        <div key={folder.id} className={`folder-item ${selectedFolder === folder.id ? 'active' : ''}`}
+                          onClick={() => { if (editingFolderId !== folder.id) setSelectedFolder(folder.id); }}
+                          onDoubleClick={() => { setEditingFolderId(folder.id); setEditingFolderName(folder.name); }}
+                          onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add('drag-over'); }}
+                          onDragLeave={(e) => { e.currentTarget.classList.remove('drag-over'); }}
+                          onDrop={(e) => { e.preventDefault(); e.currentTarget.classList.remove('drag-over'); if (draggedNote) { moveNoteToFolder(draggedNote, folder.id); setDraggedNote(null); } }}>
+                          <div className="folder-color-dot" style={{ background: folder.color }}></div>
+                          {editingFolderId === folder.id ? (
+                            <input type="text" className="folder-rename-input" value={editingFolderName}
+                              onChange={(e) => setEditingFolderName(e.target.value)}
+                              onBlur={() => renameFolder(folder.id, editingFolderName)}
+                              onKeyPress={(e) => { if (e.key === 'Enter') renameFolder(folder.id, editingFolderName); }}
+                              onClick={(e) => e.stopPropagation()} autoFocus />
+                          ) : (
+                            <span className="folder-name">{folder.name}</span>
+                          )}
+                          <button className="folder-delete" onClick={(e) => { e.stopPropagation(); deleteFolder(folder.id); }}>×</button>
+                        </div>
+                      ))}
+                      {!isCreatingFolder && <div className="folder-create" onClick={() => setIsCreatingFolder(true)}>+ New Folder</div>}
+                      {isCreatingFolder && (
+                        <div style={{ marginTop: '1rem' }}>
+                          <input type="text" className="folder-input" placeholder="Folder name..." value={newFolderName}
+                            onChange={(e) => setNewFolderName(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && createFolder()} />
+                          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '0.5rem' }}>
+                            <input type="color" value={newFolderColor} onChange={(e) => setNewFolderColor(e.target.value)}
+                              style={{ width: '40px', height: '30px', cursor: 'pointer', border: '2px solid #8b7355', borderRadius: '0.25rem' }} />
+                            <span style={{ fontFamily: 'Crimson Text, serif', fontSize: '0.9rem', color: '#2d1810' }}>Color</span>
+                          </div>
+                          <div style={{ display: 'flex', gap: '0.5rem' }}>
+                            <button className="action-button primary" onClick={createFolder} style={{ flex: 1, padding: '0.5rem' }}>Create</button>
+                            <button className="action-button" onClick={() => { setIsCreatingFolder(false); setNewFolderName(''); setNewFolderColor('#d4af37'); }}
+                              style={{ flex: 1, padding: '0.5rem', background: 'rgba(139, 115, 85, 0.2)' }}>Cancel</button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    <div className="catalog-content">
+                      <h1 className="text-5xl font-bold text-amber-900 mb-4 text-center text-shadow-gold" style={{ fontFamily: 'Cinzel, serif' }}>Catalog</h1>
+                      <p className="text-center text-amber-800 mb-6" style={{ fontFamily: 'Crimson Text, serif' }}>Your notes are synced to the cloud.</p>
+                      {notesLoading ? (
+                        <div className="text-center py-8">
+                          <div className="animate-spin rounded-full h-8 w-8 border-2 border-amber-300 border-t-amber-600 mx-auto mb-2"></div>
+                          <p className="text-amber-700" style={{ fontFamily: 'Crimson Text, serif' }}>Loading notes...</p>
+                        </div>
+                      ) : (<>
+                      {!isCreatingNote && (
+                        <div className="text-center mb-6">
+                          <button className="new-note-button" onClick={createNewNote}>+ New Note</button>
+                        </div>
+                      )}
+                      {isCreatingNote && (
+                        <div className="mb-8" key={editingNoteId || 'new'}>
+                          <input type="text" className="note-title-input" placeholder="Note Title..." value={currentNote.title}
+                            onChange={(e) => setCurrentNote({...currentNote, title: e.target.value})} />
+                          <div className="editor-toolbar">
+                            <select className="editor-select" onChange={(e) => applyFormat('fontSize', e.target.value)}>
+                              <option value="">Font Size</option>
+                              <option value="3">Small</option>
+                              <option value="4">Normal</option>
+                              <option value="5">Large</option>
+                              <option value="6">XL</option>
+                            </select>
+                            <input type="color" className="editor-button" onChange={(e) => applyFormat('foreColor', e.target.value)} title="Text Color" style={{ width: '40px' }} />
+                            <button className="editor-button" onClick={() => applyFormat('bold')} title="Bold"><strong>B</strong></button>
+                            <button className="editor-button" onClick={() => applyFormat('italic')} title="Italic"><em>I</em></button>
+                            <button className="editor-button" onClick={() => applyFormat('underline')} title="Underline"><u>U</u></button>
+                            <button className="editor-button" onClick={() => applyFormat('strikeThrough')} title="Strikethrough"><s>S</s></button>
+                            <span style={{ borderLeft: '2px solid #8b7355', height: '24px', margin: '0 0.25rem' }}></span>
+                            <button className="editor-button" onClick={() => insertList('bullet')} title="Bullet List">• List</button>
+                            <select className="editor-select" value={currentBulletStyle} onChange={(e) => { setCurrentBulletStyle(e.target.value); changeListStyle(e.target.value); }} title="Bullet Style">
+                              <option value="disc">• Disc</option>
+                              <option value="circle">○ Circle</option>
+                              <option value="square">▪ Square</option>
+                            </select>
+                            <button className="editor-button" onClick={() => insertList('number')} title="Numbered List">1. List</button>
+                            <select className="editor-select" value={currentNumberStyle} onChange={(e) => { setCurrentNumberStyle(e.target.value); changeListStyle(e.target.value); }} title="Numbering Style">
+                              <option value="decimal">1,2,3</option>
+                              <option value="lower-alpha">a,b,c</option>
+                              <option value="upper-alpha">A,B,C</option>
+                              <option value="lower-roman">i,ii,iii</option>
+                              <option value="upper-roman">I,II,III</option>
+                            </select>
+                            <span style={{ borderLeft: '2px solid #8b7355', height: '24px', margin: '0 0.25rem' }}></span>
+                            <button className="editor-button" onClick={() => applyFormat('justifyLeft')} title="Align Left">←</button>
+                            <button className="editor-button" onClick={() => applyFormat('justifyCenter')} title="Align Center">↔</button>
+                            <button className="editor-button" onClick={() => applyFormat('justifyRight')} title="Align Right">→</button>
+                          </div>
+                          <div ref={editorRef} className="editor-content" contentEditable onInput={handleEditorInput} onKeyDown={handleKeyDown} suppressContentEditableWarning></div>
+                          <div className="flex gap-4 mt-4">
+                            <button className="action-button primary" onClick={saveNote} style={{ flex: 1, padding: '0.75rem' }}>{editingNoteId ? 'Update Note' : 'Save Note'}</button>
+                            <button className="action-button" onClick={() => { setIsCreatingNote(false); setCurrentNote({ title: '', content: '', folderId: null }); setEditingNoteId(null); }}
+                              style={{ flex: 1, padding: '0.75rem', background: 'rgba(139, 115, 85, 0.2)' }}>Cancel</button>
+                          </div>
+                        </div>
+                      )}
+                      <div className="note-grid">
+                        {!isCreatingNote && noteCards.filter(note => selectedFolder === null || note.folderId === selectedFolder).map((note) => (
+                          <div key={note.id} className="note-card" draggable onDragStart={() => setDraggedNote(note.id)} onDragEnd={() => setDraggedNote(null)}>
+                            <h3 className="text-2xl font-bold text-amber-900 mb-3" style={{ fontFamily: 'Cinzel, serif' }}>{note.title || 'Untitled Note'}</h3>
+                            <div className="text-amber-950 mb-3 flex-1 overflow-hidden" style={{ fontFamily: 'Crimson Text, serif', maxHeight: '150px' }}
+                              dangerouslySetInnerHTML={{ __html: note.content }}></div>
+                            <div className="note-actions">
+                              <button className="action-button primary" onClick={() => editNote(note)}>Edit</button>
+                              <button className="action-button danger" onClick={() => deleteNote(note.id)}>Delete</button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      {noteCards.length === 0 && !isCreatingNote && (
+                        <div className="text-center text-amber-700 mt-8" style={{ fontFamily: 'Crimson Text, serif', fontSize: '1.2rem' }}>No notes yet.</div>
+                      )}
+                      </>)}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {selectedLocation && (
+                <div className="fixed bg-black bg-opacity-60 flex items-center justify-center p-4 z-50"
+                  style={{ left: '280px', right: '0', top: '0', bottom: '0' }} onClick={() => setSelectedLocation(null)}>
+                  <div className="flex gap-4 w-full modal-enter" style={{ maxWidth: '1400px', maxHeight: 'calc(100vh - 2rem)' }} onClick={(e) => e.stopPropagation()}>
+                    {/* Left Panel - Field Guide or City Map */}
+                    <div className="parchment-bg rounded-lg p-4 ornate-border overflow-hidden" style={{ width: '50%', display: 'flex', flexDirection: 'column' }}>
+                      {isWorldOverview ? (
+                        <>
+                          <h3 className="text-2xl font-bold text-amber-900 mb-3 text-center" style={{ fontFamily: 'Cinzel, serif' }}>Field Guide</h3>
+                          <div className="field-guide-tabs">
+                            <div className={`field-guide-tab ${activeFieldGuideTab === 'flora' ? 'active' : ''}`} onClick={() => setActiveFieldGuideTab('flora')}>Flora</div>
+                            <div className={`field-guide-tab ${activeFieldGuideTab === 'fauna' ? 'active' : ''}`} onClick={() => setActiveFieldGuideTab('fauna')}>Fauna</div>
+                          </div>
+                          <div className="flex-1 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 20rem)' }}>
+                            {selectedLocation.fieldGuide ? (
+                              <>
+                                {activeFieldGuideTab === 'flora' && selectedLocation.fieldGuide.flora && (
+                                  selectedLocation.fieldGuide.flora.length > 0 ? (
+                                    selectedLocation.fieldGuide.flora.map((entry, index) => (
+                                      <div key={index} className="field-guide-entry">
+                                        <h4>{entry.name}</h4>
+                                        <p>{entry.description}</p>
+                                        <div className="field-guide-meta">
+                                          <span className={`rarity-${entry.rarity.toLowerCase()}`}>◆ {entry.rarity}</span>
+                                          <span>{entry.habitat}</span>
+                                        </div>
+                                      </div>
+                                    ))
+                                  ) : (
+                                    <div className="text-center text-amber-700 italic mt-8" style={{ fontFamily: 'Crimson Text, serif' }}>No flora entries yet.</div>
+                                  )
+                                )}
+                                {activeFieldGuideTab === 'fauna' && selectedLocation.fieldGuide.fauna && (
+                                  selectedLocation.fieldGuide.fauna.length > 0 ? (
+                                    selectedLocation.fieldGuide.fauna.map((entry, index) => (
+                                      <div key={index} className="field-guide-entry">
+                                        <h4>{entry.name}</h4>
+                                        <p>{entry.description}</p>
+                                        <div className="field-guide-meta">
+                                          <span className={`rarity-${entry.rarity.toLowerCase()}`}>◆ {entry.rarity}</span>
+                                          <span>{entry.habitat}</span>
+                                        </div>
+                                      </div>
+                                    ))
+                                  ) : (
+                                    <div className="text-center text-amber-700 italic mt-8" style={{ fontFamily: 'Crimson Text, serif' }}>No fauna entries yet.</div>
+                                  )
+                                )}
+                              </>
+                            ) : (
+                              <div className="text-center text-amber-700 italic mt-8" style={{ fontFamily: 'Crimson Text, serif' }}>No field guide data available for this region.</div>
+                            )}
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="flex-1 flex items-center justify-center mb-4 relative">
+                            {selectedLocation.geoMap ? (
+                              <div className="relative inline-block max-w-full max-h-full">
+                                <img src={selectedLocation.geoMap}
+                                  alt={`${selectedLocation.name} Map`} className="max-w-full max-h-full object-contain rounded" style={{ maxHeight: 'calc(100vh - 12rem)' }} />
+                              </div>
+                            ) : selectedLocation.cityMap || selectedLocation.cityMapNight ? (
+                              <div className="relative inline-block max-w-full max-h-full">
+                                <img src={mapTimeOfDay === 'day' ? (selectedLocation.cityMap || selectedLocation.cityMapNight) : (selectedLocation.cityMapNight || selectedLocation.cityMap)}
+                                  alt={`${selectedLocation.name} City Map`} className="max-w-full max-h-full object-contain rounded" style={{ maxHeight: 'calc(100vh - 18rem)' }} />
+                                {selectedLocation.cityLocations && selectedLocation.cityLocations.map((loc, index) => (
+                                  <div key={index} className="absolute" style={{ left: `${loc.x}%`, top: `${loc.y}%`, transform: 'translate(-50%, -50%)' }}>
+                                    <div className="rounded-full bg-amber-600 border-2 border-amber-200 shadow-lg flex items-center justify-center cursor-pointer hover:scale-110 transition-transform"
+                                      style={{ width: '24px', height: '24px', fontFamily: 'Cinzel, serif', fontWeight: 'bold', color: '#fff', fontSize: '0.75rem', lineHeight: '1' }} title={loc.name}>
+                                      {index + 1}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="text-center text-amber-700 italic" style={{ fontFamily: 'Crimson Text, serif' }}>No map available</div>
+                            )}
+                          </div>
+                          {!selectedLocation.geoMap && (selectedLocation.cityMap || selectedLocation.cityMapNight) && (
+                            <div className="time-toggle">
+                              <span className="time-label">Night</span>
+                              <div className={`time-slider ${mapTimeOfDay === 'day' ? 'day' : ''}`} onClick={() => setMapTimeOfDay(mapTimeOfDay === 'day' ? 'night' : 'day')}>
+                                <div className="time-slider-thumb"></div>
+                              </div>
+                              <span className="time-label">Day</span>
+                            </div>
+                          )}
+                          {selectedLocation.cityLocations && selectedLocation.cityLocations.length > 0 && (
+                            <div className="bg-amber-50 bg-opacity-50 rounded p-3 border-2 border-amber-700">
+                              <h3 className="text-base font-bold text-amber-900 mb-2 text-center" style={{ fontFamily: 'Cinzel, serif' }}>Legend</h3>
+                              <div className="gap-x-4 gap-y-1" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))' }}>
+                                {selectedLocation.cityLocations.map((loc, index) => (
+                                  <div key={index} className="flex items-center gap-2">
+                                    <div className="rounded-full bg-amber-600 border-2 border-amber-200 flex items-center justify-center flex-shrink-0"
+                                      style={{ width: '20px', height: '20px', fontFamily: 'Cinzel, serif', fontWeight: 'bold', color: '#fff', fontSize: '0.7rem', lineHeight: '1' }}>{index + 1}</div>
+                                    <span className="text-amber-950 truncate" style={{ fontFamily: 'Crimson Text, serif', fontSize: '0.85rem' }} title={loc.name}>{loc.name}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+
+                    {/* Right Panel - Information */}
+                    <div className="parchment-bg rounded-lg p-8 ornate-border overflow-y-auto" style={{ width: '50%' }}>
+                      <button onClick={() => setSelectedLocation(null)} className="float-right p-2 hover:bg-amber-200 rounded-full transition-colors">
+                        <X className="w-6 h-6 text-amber-900" />
+                      </button>
+                      <h2 className="text-4xl font-bold text-amber-900 mb-4 pr-12 text-shadow-gold" style={{ fontFamily: 'Cinzel, serif' }}>{selectedLocation.name}</h2>
+                      <div className="flex items-center gap-3 mb-6">
+                        <div className="flex-1 h-px bg-gradient-to-r from-transparent via-amber-600 to-transparent"></div>
+                        <div className="text-amber-600">◆</div>
+                        <div className="flex-1 h-px bg-gradient-to-r from-transparent via-amber-600 to-transparent"></div>
+                      </div>
+                      <p className="text-lg text-amber-950 leading-relaxed mb-6" style={{ fontFamily: 'Crimson Text, serif' }}>{selectedLocation.description}</p>
+
+                      {selectedLocation.knownNPCs && selectedLocation.knownNPCs.length > 0 && (
+                        <div className="mb-6">
+                          <h3 className="text-2xl font-bold text-amber-900 mb-3" style={{ fontFamily: 'Cinzel, serif' }}>Known NPCs</h3>
+                          {isWorldOverview ? (
+                            <div className="npc-grid">
+                              {selectedLocation.knownNPCs.map((npc, index) => (
+                                <div key={index} className="npc-grid-item">{npc.name}</div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="space-y-2">
+                              {selectedLocation.knownNPCs.sort((a, b) => {
+                                const importanceOrder = { high: 1, medium: 2, low: 3 };
+                                return importanceOrder[a.importance] - importanceOrder[b.importance];
+                              }).map((npc, index) => (
+                                <div key={index} className="flex items-center gap-3 p-2 bg-amber-50 bg-opacity-50 rounded">
+                                  <div className={`w-2 h-2 rounded-full ${npc.importance === 'high' ? 'bg-red-600' : npc.importance === 'medium' ? 'bg-yellow-600' : 'bg-green-600'}`}></div>
+                                  <div>
+                                    <span className="font-semibold text-amber-950" style={{ fontFamily: 'Crimson Text, serif' }}>{npc.name}</span>
+                                    <span className="text-amber-800 ml-2" style={{ fontFamily: 'Crimson Text, serif' }}>— {npc.title}</span>
+                                    {npc.race && (
+                                      <span className="text-amber-700 ml-2" style={{ fontFamily: 'Crimson Text, serif' }}>({npc.race}{npc.class ? `, ${npc.class}` : ''})</span>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {selectedLocation.history && (
+                        <div className="mb-6">
+                          <h3 className="text-2xl font-bold text-amber-900 mb-3" style={{ fontFamily: 'Cinzel, serif' }}>History</h3>
+                          <p className="text-lg text-amber-950 leading-relaxed" style={{ fontFamily: 'Crimson Text, serif' }}>{selectedLocation.history}</p>
+                        </div>
+                      )}
+
+                      {selectedLocation.population && (
+                        <div className="mb-6">
+                          <h3 className="text-2xl font-bold text-amber-900 mb-3" style={{ fontFamily: 'Cinzel, serif' }}>Population</h3>
+                          <div className="bg-amber-50 bg-opacity-50 rounded p-4 space-y-2">
+                            <p className="text-amber-950" style={{ fontFamily: 'Crimson Text, serif' }}><strong>Total:</strong> {selectedLocation.population.total}</p>
+                            <p className="text-amber-950" style={{ fontFamily: 'Crimson Text, serif' }}><strong>Native Races:</strong> {selectedLocation.population.races}</p>
+                            <p className="text-amber-950" style={{ fontFamily: 'Crimson Text, serif' }}><strong>Density:</strong> {selectedLocation.population.density}</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {selectedLocation.climate && (
+                        <div className="mb-6">
+                          <h3 className="text-2xl font-bold text-amber-900 mb-3" style={{ fontFamily: 'Cinzel, serif' }}>Climate</h3>
+                          <div className="bg-amber-50 bg-opacity-50 rounded p-4 space-y-2">
+                            <p className="text-amber-950" style={{ fontFamily: 'Crimson Text, serif' }}><strong>Type:</strong> {selectedLocation.climate.type}</p>
+                            <p className="text-amber-950" style={{ fontFamily: 'Crimson Text, serif' }}><strong>Temperature:</strong> {selectedLocation.climate.temperature}</p>
+                            {selectedLocation.climate.precipitation && (
+                              <p className="text-amber-950" style={{ fontFamily: 'Crimson Text, serif' }}><strong>Precipitation:</strong> {selectedLocation.climate.precipitation}</p>
+                            )}
+                            {selectedLocation.climate.seasons && (
+                              <p className="text-amber-950" style={{ fontFamily: 'Crimson Text, serif' }}><strong>Seasons:</strong> {selectedLocation.climate.seasons}</p>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="mt-6 text-center text-amber-600 text-xs">◆</div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>

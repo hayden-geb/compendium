@@ -151,25 +151,41 @@
             const [loading, setLoading] = useState(true);
             const [authError, setAuthError] = useState(null);
 
+            // Listen for auth state changes
             useEffect(() => {
-                const unsubscribe = auth.onAuthStateChanged(async (firebaseUser) => {
-                    if (firebaseUser) {
-                        setUser(firebaseUser);
-                        try {
-                            const roleDoc = await db.collection('userRoles').doc(firebaseUser.uid).get();
-                            setUserRole(roleDoc.exists ? roleDoc.data().role : null);
-                        } catch (error) {
-                            console.error('Error fetching user role:', error);
-                            setUserRole(null);
-                        }
-                    } else {
-                        setUser(null);
+                const unsubscribe = auth.onAuthStateChanged((firebaseUser) => {
+                    setUser(firebaseUser);
+                    if (!firebaseUser) {
                         setUserRole(null);
+                        setLoading(false);
                     }
-                    setLoading(false);
                 });
                 return () => unsubscribe();
             }, []);
+
+            // Real-time listener for user role (updates immediately when changed in Firebase)
+            useEffect(() => {
+                if (!user) {
+                    setLoading(false);
+                    return;
+                }
+                
+                const unsubscribe = db.collection('userRoles').doc(user.uid)
+                    .onSnapshot((doc) => {
+                        if (doc.exists) {
+                            setUserRole(doc.data().role);
+                        } else {
+                            setUserRole(null);
+                        }
+                        setLoading(false);
+                    }, (error) => {
+                        console.error('Error listening to user role:', error);
+                        setUserRole(null);
+                        setLoading(false);
+                    });
+                
+                return () => unsubscribe();
+            }, [user]);
 
             const handleLogin = async () => {
                 try {
@@ -590,8 +606,6 @@
           }, [userRole, currentMap]);
 
           // Check if user can access field guide for a specific location
-          // Each location/dungeon can have fieldGuideRoles: ['dm', 'adventurer'] or just ['dm']
-          // If not specified, defaults to ['dm'] (DM only)
           const canAccessFieldGuide = (location) => {
             const allowedRoles = location?.fieldGuideRoles || ['dm'];
             return allowedRoles.includes(userRole);
@@ -600,7 +614,6 @@
           const codexData = {
             lore: [
               { title: "The Calamity", content: "Pending content." },
-              { title: "Eridana", content: "Pending content." },
               { title: "The Aetherfall", content: "Pending content." }
             ],
             pantheon: {

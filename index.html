@@ -807,9 +807,13 @@
                 }
                 .ornate-border { border-image: linear-gradient(45deg, #8b7355, #d4af37, #8b7355) 1; border-width: 3px; border-style: solid; }
                 .modal-enter::-webkit-scrollbar { width: 12px; }
-                .modal-enter::-webkit-scrollbar-track { background: rgba(139, 115, 85, 0.2); border-radius: 10px; }
-                .modal-enter::-webkit-scrollbar-thumb { background: rgba(212, 175, 55, 0.6); border-radius: 10px; border: 2px solid rgba(245, 236, 215, 0.3); }
-                .modal-enter::-webkit-scrollbar-thumb:hover { background: rgba(212, 175, 55, 0.8); }
+                .modal-enter::-webkit-scrollbar-track { background: transparent; border-radius: 10px; }
+                .modal-enter::-webkit-scrollbar-thumb { background: rgba(139, 115, 85, 0.6); border-radius: 10px; }
+                .modal-enter::-webkit-scrollbar-thumb:hover { background: rgba(139, 115, 85, 0.8); }
+                *::-webkit-scrollbar { width: 10px; }
+                *::-webkit-scrollbar-track { background: transparent; }
+                *::-webkit-scrollbar-thumb { background: rgba(139, 115, 85, 0.5); border-radius: 10px; }
+                *::-webkit-scrollbar-thumb:hover { background: rgba(139, 115, 85, 0.7); }
                 .text-shadow-gold { text-shadow: 2px 2px 4px rgba(212, 175, 55, 0.3); }
                 .sidebar {
                   width: 280px; position: fixed; left: 0; top: 0; height: 100vh;
@@ -971,9 +975,13 @@
                   padding: 1rem; margin-bottom: 0.75rem; transition: all 0.3s;
                 }
                 .field-guide-entry:hover { transform: translateX(4px); border-color: #d4af37; box-shadow: 0 4px 12px rgba(139, 115, 85, 0.2); }
-                .field-guide-entry h4 { font-family: 'Cinzel', serif; font-size: 1.1rem; font-weight: 600; color: #8b5a00; margin-bottom: 0.5rem; }
-                .field-guide-entry p { font-family: 'Crimson Text', serif; font-size: 0.95rem; color: #2d1810; margin-bottom: 0.5rem; line-height: 1.5; }
-                .field-guide-meta { display: flex; gap: 1rem; font-family: 'Crimson Text', serif; font-size: 0.85rem; color: #6b5a4a; }
+                .field-guide-entry h4 { font-family: 'Cinzel', serif; font-size: 1.1rem; font-weight: 600; color: #8b5a00; margin-bottom: 0.25rem; }
+                .field-guide-header { display: flex; gap: 1rem; align-items: flex-end; }
+                .field-guide-info { flex: 1; display: flex; flex-direction: column; }
+                .field-guide-image { width: 80px; height: 80px; object-fit: cover; border: 2px solid #8b7355; border-radius: 0.5rem; flex-shrink: 0; }
+                .field-guide-separator { height: 1px; background: linear-gradient(to right, transparent, #8b7355, transparent); margin: 0.75rem 0; }
+                .field-guide-description { font-family: 'Crimson Text', serif; font-size: 0.95rem; color: #2d1810; line-height: 1.5; }
+                .field-guide-meta { display: flex; gap: 1rem; font-family: 'Crimson Text', serif; font-size: 0.85rem; color: #6b5a4a; margin-top: 0.25rem; }
                 .field-guide-meta span { display: flex; align-items: center; gap: 0.25rem; }
                 .rarity-common { color: #4a6741; }
                 .rarity-uncommon { color: #2563eb; }
@@ -1299,19 +1307,25 @@
                             <div className={`field-guide-tab ${activeFieldGuideTab === 'flora' ? 'active' : ''}`} onClick={() => setActiveFieldGuideTab('flora')}>Flora</div>
                             <div className={`field-guide-tab ${activeFieldGuideTab === 'fauna' ? 'active' : ''}`} onClick={() => setActiveFieldGuideTab('fauna')}>Fauna</div>
                           </div>
-                          <div className="flex-1 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 20rem)' }}>
+                          <div className="flex-1 overflow-y-auto">
                             {selectedLocation.fieldGuide ? (
                               <>
                                 {activeFieldGuideTab === 'flora' && selectedLocation.fieldGuide.flora && (
                                   selectedLocation.fieldGuide.flora.length > 0 ? (
                                     selectedLocation.fieldGuide.flora.map((entry, index) => (
                                       <div key={index} className="field-guide-entry">
-                                        <h4>{entry.name}</h4>
-                                        <p>{entry.description}</p>
-                                        <div className="field-guide-meta">
-                                          <span className={`rarity-${entry.rarity.toLowerCase()}`}>◆ {entry.rarity}</span>
-                                          <span>{entry.habitat}</span>
+                                        <div className="field-guide-header">
+                                          <div className="field-guide-info">
+                                            <h4>{entry.name}</h4>
+                                            <div className="field-guide-meta">
+                                              <span className={`rarity-${entry.rarity.toLowerCase()}`}>◆ {entry.rarity}</span>
+                                              <span>{entry.habitat}</span>
+                                            </div>
+                                          </div>
+                                          {entry.image && <img src={entry.image} alt={entry.name} className="field-guide-image" />}
                                         </div>
+                                        <div className="field-guide-separator"></div>
+                                        <p className="field-guide-description">{entry.description}</p>
                                       </div>
                                     ))
                                   ) : (
@@ -1322,12 +1336,18 @@
                                   selectedLocation.fieldGuide.fauna.length > 0 ? (
                                     selectedLocation.fieldGuide.fauna.map((entry, index) => (
                                       <div key={index} className="field-guide-entry">
-                                        <h4>{entry.name}</h4>
-                                        <p>{entry.description}</p>
-                                        <div className="field-guide-meta">
-                                          <span className={`rarity-${entry.rarity.toLowerCase()}`}>◆ {entry.rarity}</span>
-                                          <span>{entry.habitat}</span>
+                                        <div className="field-guide-header">
+                                          <div className="field-guide-info">
+                                            <h4>{entry.name}</h4>
+                                            <div className="field-guide-meta">
+                                              <span className={`rarity-${entry.rarity.toLowerCase()}`}>◆ {entry.rarity}</span>
+                                              <span>{entry.habitat}</span>
+                                            </div>
+                                          </div>
+                                          {entry.image && <img src={entry.image} alt={entry.name} className="field-guide-image" />}
                                         </div>
+                                        <div className="field-guide-separator"></div>
+                                        <p className="field-guide-description">{entry.description}</p>
                                       </div>
                                     ))
                                   ) : (

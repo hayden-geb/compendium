@@ -15,6 +15,11 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    
+    <!-- Markdown Editor -->
+    <link rel="stylesheet" href="https://unpkg.com/easymde/dist/easymde.min.css">
+    <script src="https://unpkg.com/easymde/dist/easymde.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 <body>
     <div id="root"></div>
@@ -231,7 +236,10 @@
           const [draggedNote, setDraggedNote] = useState(null);
           const [mapTimeOfDay, setMapTimeOfDay] = useState('day');
           const [selectedLore, setSelectedLore] = useState(null);
+          const [noteSearchQuery, setNoteSearchQuery] = useState('');
           const editorRef = React.useRef(null);
+          const editorContainerRef = React.useRef(null);
+          const easyMDERef = React.useRef(null);
 
           // Firebase sync for notes and folders
           useEffect(() => {
@@ -251,16 +259,59 @@
           }, [user]);
 
           useEffect(() => {
-            if (isCreatingNote && editorRef.current) {
-              editorRef.current.innerHTML = currentNote.content;
+            if (isCreatingNote && editorContainerRef.current && !easyMDERef.current) {
+              // Small delay to ensure DOM is ready
+              setTimeout(() => {
+                if (editorContainerRef.current && !easyMDERef.current) {
+                  easyMDERef.current = new EasyMDE({
+                    element: editorContainerRef.current,
+                    initialValue: currentNote.content || '',
+                    spellChecker: false,
+                    autofocus: true,
+                    placeholder: 'Write your notes in Markdown...',
+                    status: false,
+                    toolbar: [
+                      'bold', 'italic', 'strikethrough', 'heading', '|',
+                      'quote', 'unordered-list', 'ordered-list', 'checklist', '|',
+                      'link', 'image', 'table', 'horizontal-rule', '|',
+                      'preview', 'side-by-side', 'fullscreen', '|',
+                      'guide'
+                    ],
+                    minHeight: '300px',
+                  });
+                }
+              }, 50);
             }
-          }, [isCreatingNote, editingNoteId]);
+            
+            // Cleanup when closing editor
+            if (!isCreatingNote && easyMDERef.current) {
+              easyMDERef.current.toTextArea();
+              easyMDERef.current = null;
+            }
+          }, [isCreatingNote]);
+
+          // Update editor content when editing existing note
+          useEffect(() => {
+            if (isCreatingNote && easyMDERef.current && editingNoteId) {
+              easyMDERef.current.value(currentNote.content || '');
+            }
+          }, [editingNoteId]);
 
           const createNewNote = () => {
             setCurrentNote({ title: '', content: '', folderId: selectedFolder });
             setEditingNoteId(null);
             setIsCreatingNote(true);
           };
+
+          // Search/filter notes
+          const filteredNotes = noteCards.filter(note => {
+            const matchesFolder = selectedFolder === null || note.folderId === selectedFolder;
+            if (!noteSearchQuery.trim()) return matchesFolder;
+            const query = noteSearchQuery.toLowerCase();
+            const titleMatch = (note.title || '').toLowerCase().includes(query);
+            const contentMatch = (note.content || '').toLowerCase().includes(query);
+            return matchesFolder && (titleMatch || contentMatch);
+          });
 
           const createFolder = async () => {
             if (newFolderName.trim() && user) {
@@ -300,14 +351,15 @@
 
           const saveNote = async () => {
             try {
+              const content = easyMDERef.current ? easyMDERef.current.value() : currentNote.content;
               if (editingNoteId !== null) {
                 await db.collection('users').doc(user.uid).collection('notes').doc(editingNoteId).update({
-                  title: currentNote.title, content: currentNote.content, folderId: currentNote.folderId,
+                  title: currentNote.title, content: content, folderId: currentNote.folderId,
                   updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
               } else {
                 await db.collection('users').doc(user.uid).collection('notes').add({
-                  title: currentNote.title, content: currentNote.content, folderId: currentNote.folderId,
+                  title: currentNote.title, content: content, folderId: currentNote.folderId,
                   createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                   updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
@@ -327,6 +379,16 @@
               try {
                 await db.collection('users').doc(user.uid).collection('notes').doc(id).delete();
               } catch (e) { console.error('Delete note error:', e); }
+            }
+          };
+
+          // Render markdown to HTML
+          const renderMarkdown = (content) => {
+            if (!content) return '';
+            try {
+              return marked.parse(content);
+            } catch (e) {
+              return content;
             }
           };
 
@@ -1005,12 +1067,54 @@ In taverns where hearths burn too low, travelers trade fragments of stories abou
                 .editor-content li { margin-left: 2.5em; padding-left: 0.5em; }
                 .note-card {
                   background: rgba(245, 236, 215, 0.9); border: 2px solid #8b7355; border-radius: 0.5rem;
-                  padding: 1.5rem; cursor: pointer; transition: all 0.3s; position: relative;
-                  min-height: 200px; display: flex; flex-direction: column;
+                  padding: 1.5rem; transition: all 0.3s; position: relative;
+                  break-inside: avoid; margin-bottom: 1.5rem;
                 }
-                .note-card:hover { transform: translateY(-4px); box-shadow: 0 8px 20px rgba(139, 115, 85, 0.3); border-color: #d4af37; }
-                .note-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; margin-top: 1.5rem; }
-                .note-actions { display: flex; gap: 0.5rem; margin-top: auto; padding-top: 1rem; border-top: 1px solid #8b7355; }
+                .note-card:hover { box-shadow: 0 8px 20px rgba(139, 115, 85, 0.3); border-color: #d4af37; }
+                .note-grid { 
+                  column-count: 3; column-gap: 1.5rem; margin-top: 1.5rem;
+                }
+                @media (max-width: 1400px) { .note-grid { column-count: 2; } }
+                @media (max-width: 900px) { .note-grid { column-count: 1; } }
+                .note-content { font-family: 'Crimson Text', serif; font-size: 1rem; color: #2d1810; line-height: 1.6; }
+                .note-content h1, .note-content h2, .note-content h3 { font-family: 'Cinzel', serif; color: #8b5a00; margin: 1rem 0 0.5rem; }
+                .note-content h1 { font-size: 1.5rem; }
+                .note-content h2 { font-size: 1.25rem; }
+                .note-content h3 { font-size: 1.1rem; }
+                .note-content p { margin-bottom: 0.75rem; }
+                .note-content ul, .note-content ol { margin: 0.5rem 0; padding-left: 1.5rem; }
+                .note-content li { margin-bottom: 0.25rem; }
+                .note-content code { background: rgba(139, 115, 85, 0.15); padding: 0.125rem 0.375rem; border-radius: 0.25rem; font-size: 0.9em; }
+                .note-content pre { background: rgba(45, 24, 16, 0.9); color: #f5e6d7; padding: 1rem; border-radius: 0.5rem; overflow-x: auto; margin: 0.75rem 0; }
+                .note-content pre code { background: none; padding: 0; color: inherit; }
+                .note-content blockquote { border-left: 3px solid #d4af37; padding-left: 1rem; margin: 0.75rem 0; color: #5a4a3a; font-style: italic; }
+                .note-content a { color: #8b5a00; text-decoration: underline; }
+                .note-content hr { border: none; height: 1px; background: linear-gradient(to right, transparent, #8b7355, transparent); margin: 1rem 0; }
+                .note-content table { width: 100%; border-collapse: collapse; margin: 0.75rem 0; }
+                .note-content th, .note-content td { border: 1px solid #8b7355; padding: 0.5rem; text-align: left; }
+                .note-content th { background: rgba(212, 175, 55, 0.2); }
+                .note-content input[type="checkbox"] { margin-right: 0.5rem; }
+                .note-actions { display: flex; gap: 0.5rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #8b7355; }
+                .note-search {
+                  width: 100%; padding: 0.75rem 1rem 0.75rem 2.5rem; font-family: 'Crimson Text', serif; font-size: 1rem;
+                  background: rgba(245, 236, 215, 0.9); border: 2px solid #8b7355; border-radius: 0.5rem;
+                  color: #2d1810; margin-bottom: 1.5rem;
+                }
+                .note-search:focus { outline: none; border-color: #d4af37; box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.2); }
+                .note-search-container { position: relative; }
+                .note-search-icon { position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: #8b7355; pointer-events: none; }
+                .markdown-editor-container { margin-bottom: 1rem; }
+                .markdown-editor-container .EasyMDEContainer { border: 2px solid #8b7355; border-radius: 0.5rem; overflow: hidden; }
+                .markdown-editor-container .EasyMDEContainer .CodeMirror { 
+                  background: rgba(245, 236, 215, 0.95); font-family: 'Crimson Text', serif; font-size: 1.1rem; color: #2d1810;
+                  border: none; border-radius: 0;
+                }
+                .markdown-editor-container .editor-toolbar { background: rgba(139, 115, 85, 0.15); border-bottom: 2px solid #8b7355; }
+                .markdown-editor-container .editor-toolbar button { color: #2d1810 !important; }
+                .markdown-editor-container .editor-toolbar button:hover { background: rgba(212, 175, 55, 0.3) !important; }
+                .markdown-editor-container .editor-toolbar button.active { background: rgba(212, 175, 55, 0.4) !important; }
+                .markdown-editor-container .editor-preview { background: rgba(245, 236, 215, 0.95); font-family: 'Crimson Text', serif; }
+                .markdown-editor-container .CodeMirror-cursor { border-left-color: #2d1810; }
                 .action-button {
                   padding: 0.5rem 1rem; border: 1px solid #8b7355; border-radius: 0.25rem;
                   cursor: pointer; transition: all 0.2s; font-family: 'Crimson Text', serif; font-size: 0.9rem;
@@ -1390,48 +1494,29 @@ In taverns where hearths burn too low, travelers trade fragments of stories abou
                         </div>
                       ) : (<>
                       {!isCreatingNote && (
-                        <div className="text-center mb-6">
-                          <button className="new-note-button" onClick={createNewNote}>+ New Note</button>
-                        </div>
+                        <>
+                          <div className="text-center mb-6">
+                            <button className="new-note-button" onClick={createNewNote}>+ New Note</button>
+                          </div>
+                          <div className="note-search-container">
+                            <span className="note-search-icon">🔍</span>
+                            <input 
+                              type="text" 
+                              className="note-search" 
+                              placeholder="Search notes..." 
+                              value={noteSearchQuery}
+                              onChange={(e) => setNoteSearchQuery(e.target.value)}
+                            />
+                          </div>
+                        </>
                       )}
                       {isCreatingNote && (
                         <div className="mb-8" key={editingNoteId || 'new'}>
                           <input type="text" className="note-title-input" placeholder="Note Title..." value={currentNote.title}
                             onChange={(e) => setCurrentNote({...currentNote, title: e.target.value})} />
-                          <div className="editor-toolbar">
-                            <select className="editor-select" onChange={(e) => applyFormat('fontSize', e.target.value)}>
-                              <option value="">Font Size</option>
-                              <option value="3">Small</option>
-                              <option value="4">Normal</option>
-                              <option value="5">Large</option>
-                              <option value="6">XL</option>
-                            </select>
-                            <input type="color" className="editor-button" onChange={(e) => applyFormat('foreColor', e.target.value)} title="Text Color" style={{ width: '40px' }} />
-                            <button className="editor-button" onClick={() => applyFormat('bold')} title="Bold"><strong>B</strong></button>
-                            <button className="editor-button" onClick={() => applyFormat('italic')} title="Italic"><em>I</em></button>
-                            <button className="editor-button" onClick={() => applyFormat('underline')} title="Underline"><u>U</u></button>
-                            <button className="editor-button" onClick={() => applyFormat('strikeThrough')} title="Strikethrough"><s>S</s></button>
-                            <span style={{ borderLeft: '2px solid #8b7355', height: '24px', margin: '0 0.25rem' }}></span>
-                            <button className="editor-button" onClick={() => insertList('bullet')} title="Bullet List">• List</button>
-                            <select className="editor-select" value={currentBulletStyle} onChange={(e) => { setCurrentBulletStyle(e.target.value); changeListStyle(e.target.value); }} title="Bullet Style">
-                              <option value="disc">• Disc</option>
-                              <option value="circle">○ Circle</option>
-                              <option value="square">▪ Square</option>
-                            </select>
-                            <button className="editor-button" onClick={() => insertList('number')} title="Numbered List">1. List</button>
-                            <select className="editor-select" value={currentNumberStyle} onChange={(e) => { setCurrentNumberStyle(e.target.value); changeListStyle(e.target.value); }} title="Numbering Style">
-                              <option value="decimal">1,2,3</option>
-                              <option value="lower-alpha">a,b,c</option>
-                              <option value="upper-alpha">A,B,C</option>
-                              <option value="lower-roman">i,ii,iii</option>
-                              <option value="upper-roman">I,II,III</option>
-                            </select>
-                            <span style={{ borderLeft: '2px solid #8b7355', height: '24px', margin: '0 0.25rem' }}></span>
-                            <button className="editor-button" onClick={() => applyFormat('justifyLeft')} title="Align Left">←</button>
-                            <button className="editor-button" onClick={() => applyFormat('justifyCenter')} title="Align Center">↔</button>
-                            <button className="editor-button" onClick={() => applyFormat('justifyRight')} title="Align Right">→</button>
+                          <div className="markdown-editor-container">
+                            <textarea ref={editorContainerRef}></textarea>
                           </div>
-                          <div ref={editorRef} className="editor-content" contentEditable onInput={handleEditorInput} onKeyDown={handleKeyDown} suppressContentEditableWarning></div>
                           <div className="flex gap-4 mt-4">
                             <button className="action-button primary" onClick={saveNote} style={{ flex: 1, padding: '0.75rem' }}>{editingNoteId ? 'Update Note' : 'Save Note'}</button>
                             <button className="action-button" onClick={() => { setIsCreatingNote(false); setCurrentNote({ title: '', content: '', folderId: null }); setEditingNoteId(null); }}
@@ -1440,11 +1525,10 @@ In taverns where hearths burn too low, travelers trade fragments of stories abou
                         </div>
                       )}
                       <div className="note-grid">
-                        {!isCreatingNote && noteCards.filter(note => selectedFolder === null || note.folderId === selectedFolder).map((note) => (
+                        {!isCreatingNote && filteredNotes.map((note) => (
                           <div key={note.id} className="note-card" draggable onDragStart={() => setDraggedNote(note.id)} onDragEnd={() => setDraggedNote(null)}>
                             <h3 className="text-2xl font-bold text-amber-900 mb-3" style={{ fontFamily: 'Cinzel, serif' }}>{note.title || 'Untitled Note'}</h3>
-                            <div className="text-amber-950 mb-3 flex-1 overflow-hidden" style={{ fontFamily: 'Crimson Text, serif', maxHeight: '150px' }}
-                              dangerouslySetInnerHTML={{ __html: note.content }}></div>
+                            <div className="note-content" dangerouslySetInnerHTML={{ __html: renderMarkdown(note.content) }}></div>
                             <div className="note-actions">
                               <button className="action-button primary" onClick={() => editNote(note)}>Edit</button>
                               <button className="action-button danger" onClick={() => deleteNote(note.id)}>Delete</button>
@@ -1452,7 +1536,10 @@ In taverns where hearths burn too low, travelers trade fragments of stories abou
                           </div>
                         ))}
                       </div>
-                      {noteCards.length === 0 && !isCreatingNote && (
+                      {filteredNotes.length === 0 && !isCreatingNote && noteSearchQuery && (
+                        <div className="text-center text-amber-700 mt-8" style={{ fontFamily: 'Crimson Text, serif', fontSize: '1.2rem' }}>No notes match your search.</div>
+                      )}
+                      {noteCards.length === 0 && !isCreatingNote && !noteSearchQuery && (
                         <div className="text-center text-amber-700 mt-8" style={{ fontFamily: 'Crimson Text, serif', fontSize: '1.2rem' }}>No notes yet.</div>
                       )}
                       </>)}

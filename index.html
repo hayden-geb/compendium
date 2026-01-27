@@ -235,7 +235,6 @@
           const [noteSortOrder, setNoteSortOrder] = useState('manual');
           const [noteOrder, setNoteOrder] = useState([]);
           const [dragOverNoteId, setDragOverNoteId] = useState(null);
-          const [loreSearchQuery, setLoreSearchQuery] = useState('');
           const editorRef = React.useRef(null);
           const editorContainerRef = React.useRef(null);
           const easyMDERef = React.useRef(null);
@@ -264,14 +263,11 @@
             setSelectedLocation(null);
             setSelectedLore(null);
             setExpandedNote(null);
-            if (isCreatingNote && easyMDERef.current) {
-              if (editingNoteId) {
-                const content = easyMDERef.current.value();
-                autoSaveNote(currentNote.title, content, currentNote.folderId);
-              }
+            if (isCreatingNote) {
               setIsCreatingNote(false);
               setCurrentNote({ title: '', content: '', folderId: null });
               setEditingNoteId(null);
+              setAutoSaveStatus(null);
             }
           };
 
@@ -1517,14 +1513,6 @@ In taverns where hearths burn too low, travelers trade fragments of stories abou
                   transition: all 0.3s; color: #2d1810; z-index: 5;
                 }
                 .lore-narrative-close:hover { background: rgba(45, 24, 16, 0.4); transform: scale(1.1); }
-                .lore-narrative-search {
-                  padding: 0.75rem 2rem; background: rgba(245, 236, 215, 0.8); border-bottom: 1px solid #8b7355;
-                }
-                .lore-narrative-search input {
-                  width: 100%; padding: 0.5rem 1rem; border: 2px solid #8b7355; border-radius: 0.5rem;
-                  font-family: 'Crimson Text', serif; font-size: 1rem; background: transparent; color: #2d1810;
-                }
-                .lore-narrative-search input:focus { outline: none; border-color: #d4af37; }
                 .lore-narrative-content {
                   padding: 2rem 3rem 3rem; font-family: 'Crimson Text', serif; font-size: 1.2rem;
                   color: #2d1810; line-height: 2; white-space: pre-wrap;
@@ -1645,9 +1633,9 @@ In taverns where hearths burn too low, travelers trade fragments of stories abou
                   </div>
                   <button onClick={onLogout} className="mt-2 w-full text-xs text-amber-400 hover:text-amber-200 transition-colors py-1" style={{ fontFamily: 'Crimson Text, serif' }}>Sign Out</button>
                 </div>
-                <div className={`tab-button ${activeTab === 'cartographer' ? 'active' : ''}`} onClick={() => setActiveTab('cartographer')}>Cartographer</div>
-                <div className={`tab-button ${activeTab === 'codex' ? 'active' : ''}`} onClick={() => setActiveTab('codex')}>Codex</div>
-                <div className={`tab-button ${activeTab === 'catalog' ? 'active' : ''}`} onClick={() => setActiveTab('catalog')}>Catalog</div>
+                <div className={`tab-button ${activeTab === 'cartographer' ? 'active' : ''}`} onClick={() => { closeAllModals(); setActiveTab('cartographer'); }}>Cartographer</div>
+                <div className={`tab-button ${activeTab === 'codex' ? 'active' : ''}`} onClick={() => { closeAllModals(); setActiveTab('codex'); }}>Codex</div>
+                <div className={`tab-button ${activeTab === 'catalog' ? 'active' : ''}`} onClick={() => { closeAllModals(); setActiveTab('catalog'); }}>Catalog</div>
 
                 {activeTab === 'cartographer' && (
                   <>
@@ -2163,23 +2151,8 @@ In taverns where hearths burn too low, travelers trade fragments of stories abou
                         <X className="w-5 h-5" />
                       </button>
                     </div>
-                    <div className="lore-narrative-search">
-                      <input 
-                        type="text" 
-                        placeholder="Search in text..." 
-                        value={loreSearchQuery}
-                        onChange={(e) => setLoreSearchQuery(e.target.value)}
-                      />
-                    </div>
                     <div className="lore-narrative-content">
-                      {loreSearchQuery ? (
-                        <span dangerouslySetInnerHTML={{ 
-                          __html: selectedLore.narrative.replace(
-                            new RegExp(`(${loreSearchQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'),
-                            '<mark class="search-highlight">$1</mark>'
-                          )
-                        }} />
-                      ) : selectedLore.narrative}
+                      {selectedLore.narrative}
                       <div className="lore-narrative-end">◆ ◆ ◆</div>
                     </div>
                   </div>

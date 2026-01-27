@@ -11,6 +11,11 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     
+    <!-- Markdown Editor -->
+    <link rel="stylesheet" href="https://unpkg.com/easymde/dist/easymde.min.css">
+    <script src="https://unpkg.com/easymde/dist/easymde.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
@@ -236,6 +241,9 @@
           const [noteOrder, setNoteOrder] = useState([]);
           const [dragOverNoteId, setDragOverNoteId] = useState(null);
           const [nodesVisible, setNodesVisible] = useState(false);
+          const [fieldGuideSearch, setFieldGuideSearch] = useState('');
+          const [fieldGuideRarityFilter, setFieldGuideRarityFilter] = useState('all');
+          const [fieldGuideHabitatFilter, setFieldGuideHabitatFilter] = useState('all');
           const editorRef = React.useRef(null);
           const editorContainerRef = React.useRef(null);
           const easyMDERef = React.useRef(null);
@@ -264,6 +272,9 @@
             setSelectedLocation(null);
             setSelectedLore(null);
             setExpandedNote(null);
+            setFieldGuideSearch('');
+            setFieldGuideRarityFilter('all');
+            setFieldGuideHabitatFilter('all');
             if (isCreatingNote) {
               setIsCreatingNote(false);
               setCurrentNote({ title: '', content: '', folderId: null });
@@ -435,6 +446,59 @@
             const query = noteSearchQuery.toLowerCase();
             const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
             return text.replace(regex, '<mark class="search-highlight">$1</mark>');
+          };
+
+          // Field guide filtering and searching
+          const filterFieldGuideEntries = (entries) => {
+            if (!entries) return [];
+            return entries.filter(entry => {
+              // Search filter
+              if (fieldGuideSearch.trim()) {
+                const query = fieldGuideSearch.toLowerCase();
+                const nameMatch = entry.name.toLowerCase().includes(query);
+                const descMatch = entry.description.toLowerCase().includes(query);
+                const habitatMatch = entry.habitat.toLowerCase().includes(query);
+                if (!nameMatch && !descMatch && !habitatMatch) return false;
+              }
+              // Rarity filter
+              if (fieldGuideRarityFilter !== 'all') {
+                if (entry.rarity.toLowerCase().replace(' ', '-') !== fieldGuideRarityFilter) return false;
+              }
+              // Habitat filter
+              if (fieldGuideHabitatFilter !== 'all') {
+                if (!entry.habitat.toLowerCase().includes(fieldGuideHabitatFilter.toLowerCase())) return false;
+              }
+              return true;
+            });
+          };
+
+          // Get unique habitats from field guide
+          const getUniqueHabitats = (fieldGuide) => {
+            if (!fieldGuide) return [];
+            const habitats = new Set();
+            [...(fieldGuide.flora || []), ...(fieldGuide.fauna || [])].forEach(entry => {
+              entry.habitat.split(', ').forEach(h => habitats.add(h.trim()));
+            });
+            return Array.from(habitats).sort();
+          };
+
+          // Highlight field guide search matches
+          const highlightFieldGuideMatch = (text) => {
+            if (!fieldGuideSearch.trim() || !text) return text;
+            const query = fieldGuideSearch.toLowerCase();
+            const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+            return text.replace(regex, '<mark class="search-highlight">$1</mark>');
+          };
+
+          // Get rarity icon and color
+          const getRarityInfo = (rarity) => {
+            switch (rarity.toLowerCase()) {
+              case 'common': return { icon: '●', color: '#4a6741', borderColor: '#4a6741' };
+              case 'uncommon': return { icon: '◆', color: '#2563eb', borderColor: '#2563eb' };
+              case 'rare': return { icon: '★', color: '#9333ea', borderColor: '#9333ea' };
+              case 'very rare': return { icon: '✦', color: '#ea580c', borderColor: '#ea580c' };
+              default: return { icon: '●', color: '#4a6741', borderColor: '#4a6741' };
+            }
           };
 
           // Handle note reordering (works in ALL sort modes)
@@ -1494,23 +1558,55 @@ In taverns where hearths burn too low, travelers trade fragments of stories abou
                 .field-guide-tab:last-child { border-radius: 0 0.5rem 0.5rem 0; }
                 .field-guide-tab:hover { background: rgba(212, 175, 55, 0.3); }
                 .field-guide-tab.active { background: rgba(212, 175, 55, 0.5); border-color: #d4af37; color: #8b5a00; }
-                .field-guide-scroll-container { padding-right: 1rem; margin-right: -0.5rem; }
+                .field-guide-scroll-container { padding-right: 1rem; margin-right: -0.5rem; overflow-y: auto; flex: 1; }
+                .field-guide-search-container { 
+                  display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; align-items: center;
+                }
+                .field-guide-search {
+                  flex: 1; min-width: 150px; padding: 0.5rem 0.75rem; font-family: 'Crimson Text', serif; font-size: 0.9rem;
+                  background: rgba(245, 236, 215, 0.9); border: 2px solid #8b7355; border-radius: 0.5rem;
+                  color: #2d1810;
+                }
+                .field-guide-search:focus { outline: none; border-color: #d4af37; }
+                .field-guide-filter {
+                  padding: 0.5rem 0.75rem; font-family: 'Crimson Text', serif; font-size: 0.85rem;
+                  background: rgba(245, 236, 215, 0.9); border: 2px solid #8b7355; border-radius: 0.5rem;
+                  color: #2d1810; cursor: pointer;
+                }
+                .field-guide-filter:focus { outline: none; border-color: #d4af37; }
                 .field-guide-entry {
-                  background: rgba(245, 236, 215, 0.6); border: 2px solid #8b7355; border-radius: 0.5rem;
+                  background: rgba(245, 236, 215, 0.6); border-radius: 0.5rem;
                   padding: 1rem; margin-bottom: 0.75rem; transition: all 0.3s; margin-right: 0.5rem;
                 }
-                .field-guide-entry:hover { transform: translateX(4px); border-color: #d4af37; box-shadow: 0 4px 12px rgba(139, 115, 85, 0.2); }
+                .field-guide-entry.rarity-common { border: 2px solid #4a6741; }
+                .field-guide-entry.rarity-uncommon { border: 2px solid #2563eb; }
+                .field-guide-entry.rarity-rare { border: 2px solid #9333ea; }
+                .field-guide-entry.rarity-very-rare { border: 2px solid #ea580c; }
+                .field-guide-entry:hover { transform: translateX(4px); box-shadow: 0 4px 12px rgba(139, 115, 85, 0.2); }
+                .field-guide-entry.rarity-common:hover { border-color: #6b8b5a; }
+                .field-guide-entry.rarity-uncommon:hover { border-color: #3b82f6; }
+                .field-guide-entry.rarity-rare:hover { border-color: #a855f7; }
+                .field-guide-entry.rarity-very-rare:hover { border-color: #f97316; }
                 .field-guide-entry h4 { font-family: 'Cinzel', serif; font-size: 1.1rem; font-weight: 600; color: #8b5a00; margin-bottom: 0.25rem; }
-                .field-guide-header { display: flex; gap: 1rem; align-items: flex-end; }
+                .field-guide-header { display: flex; gap: 1rem; align-items: flex-start; }
                 .field-guide-info { flex: 1; display: flex; flex-direction: column; }
                 .field-guide-image { width: 80px; height: 80px; object-fit: cover; border: 2px solid #8b7355; border-radius: 0.5rem; flex-shrink: 0; }
                 .field-guide-separator { height: 1px; background: linear-gradient(to right, transparent, #8b7355, transparent); margin: 0.75rem 0; }
                 .field-guide-description { font-family: 'Crimson Text', serif; font-size: 0.95rem; color: #2d1810; line-height: 1.5; }
-                .field-guide-meta { display: flex; gap: 1rem; font-family: 'Crimson Text', serif; font-size: 0.85rem; color: #6b5a4a; margin-top: 0.25rem; }
+                .field-guide-meta { display: flex; gap: 1rem; font-family: 'Crimson Text', serif; font-size: 0.85rem; color: #6b5a4a; margin-top: 0.25rem; flex-wrap: wrap; }
                 .field-guide-meta span { display: flex; align-items: center; gap: 0.25rem; }
+                .rarity-badge {
+                  display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.125rem 0.5rem;
+                  border-radius: 1rem; font-weight: 600; font-size: 0.8rem;
+                }
+                .rarity-badge.common { background: rgba(74, 103, 65, 0.15); color: #4a6741; border: 1px solid #4a6741; }
+                .rarity-badge.uncommon { background: rgba(37, 99, 235, 0.15); color: #2563eb; border: 1px solid #2563eb; }
+                .rarity-badge.rare { background: rgba(147, 51, 234, 0.15); color: #9333ea; border: 1px solid #9333ea; }
+                .rarity-badge.very-rare { background: rgba(234, 88, 12, 0.15); color: #ea580c; border: 1px solid #ea580c; }
                 .rarity-common { color: #4a6741; }
                 .rarity-uncommon { color: #2563eb; }
                 .rarity-rare { color: #9333ea; }
+                .rarity-very-rare { color: #ea580c; }
                 .lore-card {
                   background: rgba(245, 236, 215, 0.8); border: 2px solid #8b7355; border-radius: 0.5rem;
                   padding: 1.5rem; cursor: pointer; transition: all 0.3s; position: relative;
@@ -1975,55 +2071,112 @@ In taverns where hearths burn too low, travelers trade fragments of stories abou
                         <>
                           <h3 className="text-2xl font-bold text-amber-900 mb-3 text-center" style={{ fontFamily: 'Cinzel, serif' }}>Field Guide</h3>
                           <div className="field-guide-tabs">
-                            <div className={`field-guide-tab ${activeFieldGuideTab === 'flora' ? 'active' : ''}`} onClick={() => setActiveFieldGuideTab('flora')}>Flora</div>
-                            <div className={`field-guide-tab ${activeFieldGuideTab === 'fauna' ? 'active' : ''}`} onClick={() => setActiveFieldGuideTab('fauna')}>Fauna</div>
+                            <div className={`field-guide-tab ${activeFieldGuideTab === 'flora' ? 'active' : ''}`} onClick={() => { setActiveFieldGuideTab('flora'); setFieldGuideSearch(''); setFieldGuideRarityFilter('all'); setFieldGuideHabitatFilter('all'); }}>Flora</div>
+                            <div className={`field-guide-tab ${activeFieldGuideTab === 'fauna' ? 'active' : ''}`} onClick={() => { setActiveFieldGuideTab('fauna'); setFieldGuideSearch(''); setFieldGuideRarityFilter('all'); setFieldGuideHabitatFilter('all'); }}>Fauna</div>
                           </div>
-                          <div className="flex-1 overflow-y-auto field-guide-scroll-container">
+                          {/* Search and Filters */}
+                          <div className="field-guide-search-container">
+                            <input 
+                              type="text" 
+                              className="field-guide-search" 
+                              placeholder="Search..." 
+                              value={fieldGuideSearch}
+                              onChange={(e) => setFieldGuideSearch(e.target.value)}
+                            />
+                            <select 
+                              className="field-guide-filter" 
+                              value={fieldGuideRarityFilter} 
+                              onChange={(e) => setFieldGuideRarityFilter(e.target.value)}
+                            >
+                              <option value="all">All Rarities</option>
+                              <option value="common">Common</option>
+                              <option value="uncommon">Uncommon</option>
+                              <option value="rare">Rare</option>
+                              <option value="very-rare">Very Rare</option>
+                            </select>
+                            <select 
+                              className="field-guide-filter" 
+                              value={fieldGuideHabitatFilter} 
+                              onChange={(e) => setFieldGuideHabitatFilter(e.target.value)}
+                            >
+                              <option value="all">All Habitats</option>
+                              {selectedLocation.fieldGuide && getUniqueHabitats(selectedLocation.fieldGuide).map(habitat => (
+                                <option key={habitat} value={habitat}>{habitat}</option>
+                              ))}
+                            </select>
+                          </div>
+                          <div className="field-guide-scroll-container">
                             {selectedLocation.fieldGuide ? (
                               <>
                                 {activeFieldGuideTab === 'flora' && selectedLocation.fieldGuide.flora && (
-                                  selectedLocation.fieldGuide.flora.length > 0 ? (
-                                    selectedLocation.fieldGuide.flora.map((entry, index) => (
-                                      <div key={index} className="field-guide-entry">
-                                        <div className="field-guide-header">
-                                          <div className="field-guide-info">
-                                            <h4>{entry.name}</h4>
-                                            <div className="field-guide-meta">
-                                              <span className={`rarity-${entry.rarity.toLowerCase()}`}>◆ {entry.rarity}</span>
-                                              <span>{entry.habitat}</span>
+                                  (() => {
+                                    const filteredFlora = filterFieldGuideEntries(selectedLocation.fieldGuide.flora);
+                                    return filteredFlora.length > 0 ? (
+                                      filteredFlora.map((entry, index) => {
+                                        const rarityInfo = getRarityInfo(entry.rarity);
+                                        const rarityClass = entry.rarity.toLowerCase().replace(' ', '-');
+                                        return (
+                                          <div key={index} className={`field-guide-entry rarity-${rarityClass}`}>
+                                            <div className="field-guide-header">
+                                              <div className="field-guide-info">
+                                                <h4 dangerouslySetInnerHTML={{ __html: highlightFieldGuideMatch(entry.name) }}></h4>
+                                                <div className="field-guide-meta">
+                                                  <span className={`rarity-badge ${rarityClass}`}>
+                                                    {rarityInfo.icon} {entry.rarity}
+                                                  </span>
+                                                  <span dangerouslySetInnerHTML={{ __html: highlightFieldGuideMatch(entry.habitat) }}></span>
+                                                </div>
+                                              </div>
+                                              {entry.image && <img src={entry.image} alt={entry.name} className="field-guide-image" />}
                                             </div>
+                                            <div className="field-guide-separator"></div>
+                                            <p className="field-guide-description" dangerouslySetInnerHTML={{ __html: highlightFieldGuideMatch(entry.description) }}></p>
                                           </div>
-                                          {entry.image && <img src={entry.image} alt={entry.name} className="field-guide-image" />}
-                                        </div>
-                                        <div className="field-guide-separator"></div>
-                                        <p className="field-guide-description">{entry.description}</p>
+                                        );
+                                      })
+                                    ) : (
+                                      <div className="text-center text-amber-700 italic mt-8" style={{ fontFamily: 'Crimson Text, serif' }}>
+                                        {fieldGuideSearch || fieldGuideRarityFilter !== 'all' || fieldGuideHabitatFilter !== 'all' 
+                                          ? 'No flora entries match your filters.' 
+                                          : 'No flora entries yet.'}
                                       </div>
-                                    ))
-                                  ) : (
-                                    <div className="text-center text-amber-700 italic mt-8" style={{ fontFamily: 'Crimson Text, serif' }}>No flora entries yet.</div>
-                                  )
+                                    );
+                                  })()
                                 )}
                                 {activeFieldGuideTab === 'fauna' && selectedLocation.fieldGuide.fauna && (
-                                  selectedLocation.fieldGuide.fauna.length > 0 ? (
-                                    selectedLocation.fieldGuide.fauna.map((entry, index) => (
-                                      <div key={index} className="field-guide-entry">
-                                        <div className="field-guide-header">
-                                          <div className="field-guide-info">
-                                            <h4>{entry.name}</h4>
-                                            <div className="field-guide-meta">
-                                              <span className={`rarity-${entry.rarity.toLowerCase()}`}>◆ {entry.rarity}</span>
-                                              <span>{entry.habitat}</span>
+                                  (() => {
+                                    const filteredFauna = filterFieldGuideEntries(selectedLocation.fieldGuide.fauna);
+                                    return filteredFauna.length > 0 ? (
+                                      filteredFauna.map((entry, index) => {
+                                        const rarityInfo = getRarityInfo(entry.rarity);
+                                        const rarityClass = entry.rarity.toLowerCase().replace(' ', '-');
+                                        return (
+                                          <div key={index} className={`field-guide-entry rarity-${rarityClass}`}>
+                                            <div className="field-guide-header">
+                                              <div className="field-guide-info">
+                                                <h4 dangerouslySetInnerHTML={{ __html: highlightFieldGuideMatch(entry.name) }}></h4>
+                                                <div className="field-guide-meta">
+                                                  <span className={`rarity-badge ${rarityClass}`}>
+                                                    {rarityInfo.icon} {entry.rarity}
+                                                  </span>
+                                                  <span dangerouslySetInnerHTML={{ __html: highlightFieldGuideMatch(entry.habitat) }}></span>
+                                                </div>
+                                              </div>
+                                              {entry.image && <img src={entry.image} alt={entry.name} className="field-guide-image" />}
                                             </div>
+                                            <div className="field-guide-separator"></div>
+                                            <p className="field-guide-description" dangerouslySetInnerHTML={{ __html: highlightFieldGuideMatch(entry.description) }}></p>
                                           </div>
-                                          {entry.image && <img src={entry.image} alt={entry.name} className="field-guide-image" />}
-                                        </div>
-                                        <div className="field-guide-separator"></div>
-                                        <p className="field-guide-description">{entry.description}</p>
+                                        );
+                                      })
+                                    ) : (
+                                      <div className="text-center text-amber-700 italic mt-8" style={{ fontFamily: 'Crimson Text, serif' }}>
+                                        {fieldGuideSearch || fieldGuideRarityFilter !== 'all' || fieldGuideHabitatFilter !== 'all' 
+                                          ? 'No fauna entries match your filters.' 
+                                          : 'No fauna entries yet.'}
                                       </div>
-                                    ))
-                                  ) : (
-                                    <div className="text-center text-amber-700 italic mt-8" style={{ fontFamily: 'Crimson Text, serif' }}>No fauna entries yet.</div>
-                                  )
+                                    );
+                                  })()
                                 )}
                               </>
                             ) : (

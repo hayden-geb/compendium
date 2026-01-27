@@ -615,13 +615,12 @@
             setIsCreatingNote(true);
           };
 
-          const [confirmDeleteId, setConfirmDeleteId] = useState(null);
-
           const deleteNote = async (id) => {
-            try {
-              await db.collection('users').doc(user.uid).collection('notes').doc(id).delete();
-              setConfirmDeleteId(null);
-            } catch (e) { console.error('Delete note error:', e); }
+            if (window.confirm('Are you sure you want to delete this note?')) {
+              try {
+                await db.collection('users').doc(user.uid).collection('notes').doc(id).delete();
+              } catch (e) { console.error('Delete note error:', e); }
+            }
           };
 
           const applyFormat = (command, value = null) => {
@@ -2102,25 +2101,17 @@ In taverns where hearths burn too low, travelers trade fragments of stories abou
                             ></h3>
                             <div className="note-content" dangerouslySetInnerHTML={{ __html: highlightSearchMatch(renderMarkdown(note.content), true) }}></div>
                             <div className="note-actions" onClick={(e) => e.stopPropagation()} style={{ position: 'relative' }}>
-                              <button className="action-button primary" onClick={(e) => { e.stopPropagation(); e.preventDefault(); editNote(note); }}>Edit</button>
-                              {confirmDeleteId === note.id ? (
-                                <>
-                                  <span style={{ fontFamily: 'Crimson Text, serif', fontSize: '0.85rem', color: '#8b3333' }}>Delete?</span>
-                                  <button className="action-button danger" onClick={(e) => { e.stopPropagation(); e.preventDefault(); deleteNote(note.id); }}>Yes</button>
-                                  <button className="action-button" onClick={(e) => { e.stopPropagation(); e.preventDefault(); setConfirmDeleteId(null); }} style={{ background: 'rgba(139, 115, 85, 0.2)' }}>No</button>
-                                </>
-                              ) : (
-                                <button className="action-button danger" onClick={(e) => { e.stopPropagation(); e.preventDefault(); setConfirmDeleteId(note.id); }}>Delete</button>
-                              )}
-                              <button className="move-note-btn" onClick={(e) => { e.stopPropagation(); e.preventDefault(); setMovingNoteId(movingNoteId === note.id ? null : note.id); }}>Move</button>
+                              <button className="action-button primary" onClick={() => editNote(note)}>Edit</button>
+                              <button className="action-button danger" onClick={() => deleteNote(note.id)}>Delete</button>
+                              <button className="move-note-btn" onClick={(e) => { e.stopPropagation(); setMovingNoteId(movingNoteId === note.id ? null : note.id); }}>Move</button>
                               {movingNoteId === note.id && (
                                 <div className="note-folder-select" onClick={(e) => e.stopPropagation()}>
-                                  <div className="note-folder-option" onClick={(e) => { e.stopPropagation(); e.preventDefault(); moveNoteToFolder(note.id, null); setMovingNoteId(null); }}>
+                                  <div className="note-folder-option" onClick={() => { moveNoteToFolder(note.id, null); setMovingNoteId(null); }}>
                                     <div className="folder-color-dot" style={{ background: '#8b7355' }}></div>
                                     <span>No Folder</span>
                                   </div>
                                   {folders.map(folder => (
-                                    <div key={folder.id} className="note-folder-option" onClick={(e) => { e.stopPropagation(); e.preventDefault(); moveNoteToFolder(note.id, folder.id); setMovingNoteId(null); }}>
+                                    <div key={folder.id} className="note-folder-option" onClick={() => { moveNoteToFolder(note.id, folder.id); setMovingNoteId(null); }}>
                                       <div className="folder-color-dot" style={{ background: folder.color }}></div>
                                       <span>{folder.name}</span>
                                     </div>

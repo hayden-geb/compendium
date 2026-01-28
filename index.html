@@ -537,6 +537,7 @@
           // Touch drag for mobile
           const touchStartRef = React.useRef(null);
           const touchNoteRef = React.useRef(null);
+          const [touchOverFolderId, setTouchOverFolderId] = useState(null);
           
           const handleTouchStart = (e, noteId) => {
             touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, time: Date.now() };
@@ -559,20 +560,36 @@
               // Find element under touch point
               const elemBelow = document.elementFromPoint(touch.clientX, touch.clientY);
               if (elemBelow) {
+                // Check for note card
                 const noteCard = elemBelow.closest('.note-card');
                 if (noteCard) {
                   const targetId = noteCard.dataset.noteId;
                   if (targetId && targetId !== draggedNote) {
                     setDragOverNoteId(targetId);
+                    setTouchOverFolderId(null);
                   }
+                } else {
+                  setDragOverNoteId(null);
+                }
+                
+                // Check for folder
+                const folderItem = elemBelow.closest('.folder-item');
+                if (folderItem) {
+                  const folderId = folderItem.dataset.folderId;
+                  setTouchOverFolderId(folderId || null);
+                } else {
+                  setTouchOverFolderId(null);
                 }
               }
             }
           };
           
           const handleTouchEnd = (e) => {
-            if (draggedNote && dragOverNoteId) {
-              // Perform the drop
+            if (draggedNote && touchOverFolderId) {
+              // Drop into folder
+              moveNoteToFolder(draggedNote, touchOverFolderId === 'all' ? null : touchOverFolderId);
+            } else if (draggedNote && dragOverNoteId) {
+              // Perform the note reorder drop
               const currentOrder = sortedNotes.map(n => n.id);
               const draggedIndex = currentOrder.indexOf(draggedNote);
               const targetIndex = currentOrder.indexOf(dragOverNoteId);
@@ -599,6 +616,7 @@
             
             setDraggedNote(null);
             setDragOverNoteId(null);
+            setTouchOverFolderId(null);
             touchStartRef.current = null;
             touchNoteRef.current = null;
           };
@@ -1656,7 +1674,10 @@ In taverns where hearths burn too low, travelers trade fragments of stories abou
                 }
                 .folder-item:hover { background: rgba(212, 175, 55, 0.3); transform: translateX(4px); }
                 .folder-item.active { background: rgba(212, 175, 55, 0.4); border-color: #d4af37; }
-                .folder-item.drag-over { background: rgba(212, 175, 55, 0.6); border-color: #d4af37; border-style: dashed; }
+                .folder-item.drag-over, .folder-item.touch-drag-over { 
+                  background: rgba(212, 175, 55, 0.6); border-color: #d4af37; border-style: dashed;
+                  transform: scale(1.02); box-shadow: 0 4px 12px rgba(212, 175, 55, 0.4);
+                }
                 .folder-color-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
                 .folder-name { flex: 1; font-family: 'Crimson Text', serif; font-size: 1rem; color: #2d1810; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
                 .folder-delete {
@@ -1784,67 +1805,69 @@ In taverns where hearths burn too low, travelers trade fragments of stories abou
                   padding: 1rem; box-sizing: border-box;
                 }
                 .customs-grid {
-                  display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr);
+                  display: grid; 
+                  grid-template-columns: repeat(3, 1fr); 
+                  grid-template-rows: 1fr 1fr;
                   gap: 1rem; flex: 1; min-height: 0;
                 }
                 .customs-rule {
                   background: rgba(245, 236, 215, 0.9); border: 2px solid #8b7355; border-radius: 0.5rem;
-                  padding: 1rem; position: relative; transition: all 0.3s ease;
+                  padding: 1.25rem; position: relative; transition: all 0.3s ease;
                   display: flex; flex-direction: column; overflow: hidden;
                 }
                 .customs-rule:hover {
                   transform: translateY(-4px); box-shadow: 0 8px 24px rgba(139, 115, 85, 0.3);
                   border-color: #d4af37;
                 }
-                .customs-rule-large {
+                .customs-rule-wide {
                   grid-column: span 2;
                 }
                 .customs-rule-header {
-                  display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem; flex-shrink: 0;
+                  display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem; flex-shrink: 0;
                 }
                 .customs-rule-number {
-                  width: 28px; height: 28px; background: linear-gradient(135deg, #d4af37 0%, #8b7355 100%);
+                  width: 32px; height: 32px; background: linear-gradient(135deg, #d4af37 0%, #8b7355 100%);
                   border-radius: 50%; display: flex; align-items: center; justify-content: center;
-                  font-family: 'Cinzel', serif; font-weight: 700; font-size: 0.9rem; color: #2d1810;
+                  font-family: 'Cinzel', serif; font-weight: 700; font-size: 1rem; color: #2d1810;
                   flex-shrink: 0;
                 }
                 .customs-rule-header h3 {
-                  font-family: 'Cinzel', serif; font-size: 1.1rem; font-weight: 600; color: #8b5a00; margin: 0;
+                  font-family: 'Cinzel', serif; font-size: 1.15rem; font-weight: 600; color: #8b5a00; margin: 0;
                 }
                 .customs-rule > p {
-                  font-family: 'Crimson Text', serif; font-size: 0.95rem; color: #2d1810; line-height: 1.5; margin: 0;
+                  font-family: 'Crimson Text', serif; font-size: 1.05rem; color: #2d1810; line-height: 1.6; margin: 0;
                 }
                 .customs-subrules-row {
-                  display: flex; gap: 0.5rem; flex: 1; min-height: 0;
+                  display: flex; gap: 0.75rem; flex: 1; min-height: 0;
                 }
                 .customs-subrule {
                   background: rgba(139, 115, 85, 0.1); border-left: 3px solid #d4af37;
-                  padding: 0.5rem 0.75rem; border-radius: 0 0.25rem 0.25rem 0; flex: 1;
+                  padding: 0.75rem 1rem; border-radius: 0 0.25rem 0.25rem 0; flex: 1;
                 }
                 .customs-subrule h4 {
-                  font-family: 'Cinzel', serif; font-size: 0.85rem; font-weight: 600; color: #8b5a00; margin: 0 0 0.25rem 0;
+                  font-family: 'Cinzel', serif; font-size: 0.9rem; font-weight: 600; color: #8b5a00; margin: 0 0 0.5rem 0;
                 }
                 .customs-subrule ul {
-                  margin: 0; padding-left: 1rem; font-family: 'Crimson Text', serif; font-size: 0.85rem; color: #2d1810;
+                  margin: 0; padding-left: 1.1rem; font-family: 'Crimson Text', serif; font-size: 0.95rem; color: #2d1810;
                   list-style-type: disc;
                 }
-                .customs-subrule li { margin: 0.15rem 0; line-height: 1.4; }
+                .customs-subrule li { margin: 0.2rem 0; line-height: 1.5; }
                 .customs-note {
-                  font-family: 'Crimson Text', serif; font-size: 0.85rem; color: #6b5a4a;
-                  font-style: italic; margin-top: 0.5rem; flex-shrink: 0;
+                  font-family: 'Crimson Text', serif; font-size: 0.9rem; color: #6b5a4a;
+                  font-style: italic; margin-top: auto; padding-top: 0.5rem; flex-shrink: 0;
                 }
                 @media (max-width: 1024px) {
                   .customs-grid {
-                    grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(3, 1fr);
+                    grid-template-columns: repeat(2, 1fr); grid-template-rows: auto;
                   }
-                  .customs-rule-large { grid-column: span 2; }
+                  .customs-rule-wide { grid-column: span 2; }
                 }
                 @media (max-width: 768px) {
                   .customs-grid {
                     grid-template-columns: 1fr; grid-template-rows: auto;
                     overflow-y: auto;
                   }
-                  .customs-rule-large { grid-column: span 1; }
+                  .customs-rule-wide { grid-column: span 1; }
                   .customs-subrules-row { flex-direction: column; }
                 }
                 .lore-card {
@@ -2121,12 +2144,12 @@ In taverns where hearths burn too low, travelers trade fragments of stories abou
                       </div>
 
                       {/* Rule 5 */}
-                      <div className="customs-rule customs-rule-large">
+                      <div className="customs-rule customs-rule-wide">
                         <div className="customs-rule-header">
                           <span className="customs-rule-number">5</span>
                           <h3>Desperate Measures</h3>
                         </div>
-                        <p className="mb-2">When beaten (¼ health or less), expend death saves for abilities:</p>
+                        <p className="mb-3">When beaten (¼ health or less), expend death saving throws for abilities:</p>
                         
                         <div className="customs-subrules-row">
                           <div className="customs-subrule">
@@ -2154,16 +2177,7 @@ In taverns where hearths burn too low, travelers trade fragments of stories abou
                           </div>
                         </div>
 
-                        <p className="customs-note">Death saves reset after a long rest.</p>
-                      </div>
-
-                      {/* Rule 6 */}
-                      <div className="customs-rule">
-                        <div className="customs-rule-header">
-                          <span className="customs-rule-number">6</span>
-                          <h3>Hidden Death Saves</h3>
-                        </div>
-                        <p>Death saving throws are rolled behind the DM screen.</p>
+                        <p className="customs-note">Death saving throws reset after a long rest.</p>
                       </div>
                     </div>
                   </div>
@@ -2303,12 +2317,18 @@ In taverns where hearths burn too low, travelers trade fragments of stories abou
                   <div className="flex h-[calc(100vh-2rem)]">
                     <div className="folder-sidebar">
                       <h2 className="text-xl font-bold text-amber-900 mb-4 text-center" style={{ fontFamily: 'Cinzel, serif' }}>Folders</h2>
-                      <div className={`folder-item ${selectedFolder === null ? 'active' : ''}`} onClick={() => setSelectedFolder(null)}>
+                      <div 
+                        className={`folder-item ${selectedFolder === null ? 'active' : ''} ${touchOverFolderId === 'all' ? 'touch-drag-over' : ''}`} 
+                        data-folder-id="all"
+                        onClick={() => setSelectedFolder(null)}
+                      >
                         <div className="folder-color-dot" style={{ background: '#8b7355' }}></div>
                         <span className="folder-name">All Notes</span>
                       </div>
                       {folders.map((folder) => (
-                        <div key={folder.id} className={`folder-item ${selectedFolder === folder.id ? 'active' : ''}`}
+                        <div key={folder.id} 
+                          className={`folder-item ${selectedFolder === folder.id ? 'active' : ''} ${touchOverFolderId === folder.id ? 'touch-drag-over' : ''}`}
+                          data-folder-id={folder.id}
                           onClick={() => { if (editingFolderId !== folder.id) setSelectedFolder(folder.id); }}
                           onDoubleClick={() => { setEditingFolderId(folder.id); setEditingFolderName(folder.name); }}
                           onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add('drag-over'); }}

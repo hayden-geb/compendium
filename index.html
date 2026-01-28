@@ -1789,17 +1789,18 @@ In taverns where hearths burn too low, travelers trade fragments of stories abou
                 .field-guide-entry.rarity-rare:hover { border-color: #a855f7; }
                 .field-guide-entry.rarity-very-rare:hover { border-color: #f97316; }
                 .field-guide-entry h4 { font-family: 'Cinzel', serif; font-size: 1.1rem; font-weight: 600; color: #8b5a00; margin-bottom: 0.25rem; }
-                .field-guide-header { display: flex; gap: 1rem; align-items: stretch; min-height: 80px; }
-                .field-guide-info { flex: 0 0 auto; display: flex; flex-direction: column; min-width: 120px; justify-content: center; }
+                .field-guide-header { display: flex; gap: 1rem; align-items: flex-start; }
+                .field-guide-info { flex: 0 0 auto; display: flex; flex-direction: column; min-width: 120px; }
                 .field-guide-image { 
-                  flex: 1;
-                  height: 100%;
-                  min-height: 70px;
-                  max-height: 120px;
+                  flex: 1 1 auto;
+                  max-width: 100%;
+                  width: auto;
+                  height: auto;
+                  max-height: 150px;
                   object-fit: cover;
                   object-position: center;
                   border-radius: 0.25rem;
-                  margin-left: auto;
+                  display: block;
                 }
                 .field-guide-separator { height: 1px; background: linear-gradient(to right, transparent, #8b7355, transparent); margin: 0.75rem 0; }
                 .field-guide-description { font-family: 'Crimson Text', serif; font-size: 0.95rem; color: #2d1810; line-height: 1.5; }

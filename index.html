@@ -534,6 +534,75 @@
             setDraggedNote(null);
           };
 
+          // Touch drag for mobile
+          const touchStartRef = React.useRef(null);
+          const touchNoteRef = React.useRef(null);
+          
+          const handleTouchStart = (e, noteId) => {
+            touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, time: Date.now() };
+            touchNoteRef.current = noteId;
+          };
+          
+          const handleTouchMove = (e, noteId) => {
+            if (!touchStartRef.current || !touchNoteRef.current) return;
+            
+            const touch = e.touches[0];
+            const deltaX = Math.abs(touch.clientX - touchStartRef.current.x);
+            const deltaY = Math.abs(touch.clientY - touchStartRef.current.y);
+            
+            // If moved enough, start dragging
+            if (deltaX > 10 || deltaY > 10) {
+              if (!draggedNote) {
+                setDraggedNote(touchNoteRef.current);
+              }
+              
+              // Find element under touch point
+              const elemBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+              if (elemBelow) {
+                const noteCard = elemBelow.closest('.note-card');
+                if (noteCard) {
+                  const targetId = noteCard.dataset.noteId;
+                  if (targetId && targetId !== draggedNote) {
+                    setDragOverNoteId(targetId);
+                  }
+                }
+              }
+            }
+          };
+          
+          const handleTouchEnd = (e) => {
+            if (draggedNote && dragOverNoteId) {
+              // Perform the drop
+              const currentOrder = sortedNotes.map(n => n.id);
+              const draggedIndex = currentOrder.indexOf(draggedNote);
+              const targetIndex = currentOrder.indexOf(dragOverNoteId);
+              
+              if (draggedIndex !== -1) {
+                currentOrder.splice(draggedIndex, 1);
+              }
+              if (targetIndex !== -1) {
+                currentOrder.splice(targetIndex, 0, draggedNote);
+              } else {
+                currentOrder.push(draggedNote);
+              }
+              
+              setNoteOrder(currentOrder);
+              setNoteSortOrder('manual');
+            } else if (touchStartRef.current && !draggedNote) {
+              // Was a tap, not a drag - check if it was quick enough for a click
+              const elapsed = Date.now() - touchStartRef.current.time;
+              if (elapsed < 200 && touchNoteRef.current) {
+                const note = noteCards.find(n => n.id === touchNoteRef.current);
+                if (note) setExpandedNote(note);
+              }
+            }
+            
+            setDraggedNote(null);
+            setDragOverNoteId(null);
+            touchStartRef.current = null;
+            touchNoteRef.current = null;
+          };
+
           // Mobile move functions
           const moveNoteUp = (noteId) => {
             const currentOrder = sortedNotes.map(n => n.id);
@@ -1370,8 +1439,12 @@ In taverns where hearths burn too low, travelers trade fragments of stories abou
                 .note-content th, .note-content td { border: 1px solid #8b7355; padding: 0.5rem; text-align: left; }
                 .note-content th { background: rgba(212, 175, 55, 0.2); }
                 .note-actions { display: flex; gap: 0.5rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #8b7355; flex-wrap: wrap; }
-                .note-card.dragging { opacity: 0.5; transform: scale(0.98); }
-                .note-card.drag-over { border-color: #d4af37; border-style: dashed; background: rgba(212, 175, 55, 0.1); }
+                .note-card.dragging { opacity: 0.6; transform: scale(0.95); box-shadow: 0 8px 24px rgba(0,0,0,0.3); z-index: 10; }
+                .note-card.drag-over { border-color: #d4af37; border-style: dashed; background: rgba(212, 175, 55, 0.2); transform: scale(1.02); }
+                @media (pointer: coarse) {
+                  .note-card { touch-action: pan-y; user-select: none; -webkit-user-select: none; }
+                  .note-card.dragging { opacity: 0.7; }
+                }
                 .note-search {
                   flex: 1; padding: 0.75rem 1rem; font-family: 'Crimson Text', serif; font-size: 1rem;
                   background: transparent; border: 2px solid #8b7355; border-radius: 0.5rem;
@@ -1446,10 +1519,27 @@ In taverns where hearths burn too low, travelers trade fragments of stories abou
                   background: rgba(245, 236, 215, 0.95); font-family: 'Crimson Text', serif; font-size: 1.1rem; color: #2d1810;
                   border: none; border-radius: 0; min-height: 300px;
                 }
-                .markdown-editor-container .editor-toolbar { background: rgba(139, 115, 85, 0.15); border-bottom: 2px solid #8b7355; }
-                .markdown-editor-container .editor-toolbar button { color: #2d1810 !important; }
+                .markdown-editor-container .editor-toolbar { 
+                  background: rgba(139, 115, 85, 0.15); border-bottom: 2px solid #8b7355;
+                  overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch;
+                  flex-wrap: nowrap !important;
+                }
+                .markdown-editor-container .editor-toolbar button { color: #2d1810 !important; flex-shrink: 0; }
                 .markdown-editor-container .editor-toolbar button:hover { background: rgba(212, 175, 55, 0.3) !important; }
                 .markdown-editor-container .editor-toolbar button.active { background: rgba(212, 175, 55, 0.4) !important; }
+                .markdown-editor-container .editor-toolbar i.separator { flex-shrink: 0; }
+                @media (max-width: 768px) {
+                  .markdown-editor-container .editor-toolbar {
+                    padding: 4px 8px;
+                    display: flex !important;
+                    flex-wrap: nowrap !important;
+                    justify-content: flex-start;
+                  }
+                  .markdown-editor-container .editor-toolbar button {
+                    padding: 8px 10px !important;
+                    min-width: 36px;
+                  }
+                }
                 .markdown-editor-container .editor-preview { 
                   background: rgba(245, 236, 215, 0.95); font-family: 'Crimson Text', serif; 
                   padding: 1rem; color: #2d1810;
@@ -2131,7 +2221,8 @@ In taverns where hearths burn too low, travelers trade fragments of stories abou
                       <div className="note-grid">
                         {!isCreatingNote && sortedNotes.map((note, index) => (
                           <div 
-                            key={note.id} 
+                            key={note.id}
+                            data-note-id={note.id}
                             className={`note-card ${draggedNote === note.id ? 'dragging' : ''} ${dragOverNoteId === note.id ? 'drag-over' : ''}`}
                             onClick={() => setExpandedNote(note)}
                             draggable
@@ -2140,6 +2231,9 @@ In taverns where hearths burn too low, travelers trade fragments of stories abou
                             onDragOver={(e) => handleNoteDragOver(e, note.id)}
                             onDragLeave={() => setDragOverNoteId(null)}
                             onDrop={(e) => handleNoteDrop(e, note.id)}
+                            onTouchStart={(e) => handleTouchStart(e, note.id)}
+                            onTouchMove={(e) => handleTouchMove(e, note.id)}
+                            onTouchEnd={handleTouchEnd}
                           >
                             <h3 
                               className="text-2xl font-bold text-amber-900 mb-3" 
@@ -2147,7 +2241,7 @@ In taverns where hearths burn too low, travelers trade fragments of stories abou
                               dangerouslySetInnerHTML={{ __html: highlightSearchMatch(note.title || 'Untitled Note') }}
                             ></h3>
                             <div className="note-content" dangerouslySetInnerHTML={{ __html: highlightSearchMatch(renderMarkdown(note.content), true) }}></div>
-                            <div className="note-actions" onClick={(e) => e.stopPropagation()} style={{ position: 'relative' }}>
+                            <div className="note-actions" onClick={(e) => e.stopPropagation()} onTouchStart={(e) => e.stopPropagation()} style={{ position: 'relative' }}>
                               <button type="button" className="action-button primary" onClick={(e) => { e.stopPropagation(); editNote(note); }}>Edit</button>
                               <button type="button" className="action-button danger" onClick={(e) => { e.stopPropagation(); deleteNote(note.id); }}>Delete</button>
                               <button type="button" className="move-note-btn" onClick={(e) => { e.stopPropagation(); setMovingNoteId(movingNoteId === note.id ? null : note.id); }}>Move</button>

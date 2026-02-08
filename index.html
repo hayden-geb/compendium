@@ -44,30 +44,36 @@
     <script type="text/babel">
         const { useState, useEffect } = React;
         
-        const X = ({ className }) => {
+        /* =============================================
+           ICON COMPONENTS
+           Lucide icon wrappers for React
+           ============================================= */
+        
+        const CloseIcon = ({ className }) => {
             React.useEffect(() => {
                 lucide.createIcons();
             });
             return <i data-lucide="x" className={className}></i>;
         };
         
-        const MapPin = ({ className }) => {
+        const MapPinIcon = ({ className }) => {
             React.useEffect(() => {
                 lucide.createIcons();
             });
             return <i data-lucide="map-pin" className={className}></i>;
         };
 
-        const Skull = ({ className }) => {
+        const SkullIcon = ({ className }) => {
             React.useEffect(() => {
                 lucide.createIcons();
             });
             return <i data-lucide="skull" className={className}></i>;
         };
 
-        // =============================================
-        // LOGIN SCREEN
-        // =============================================
+        /* =============================================
+           LOGIN SCREEN
+           Google OAuth sign-in page
+           ============================================= */
         const LoginScreen = ({ onLogin, error }) => (
             <div className="min-h-screen bg-gradient-to-br from-amber-50 via-stone-100 to-amber-100 flex items-center justify-center">
                 <div className="bg-white bg-opacity-90 rounded-lg shadow-2xl p-8 max-w-md w-full mx-4" style={{ 
@@ -107,9 +113,10 @@
             </div>
         );
 
-        // =============================================
-        // ACCESS PENDING SCREEN
-        // =============================================
+        /* =============================================
+           ACCESS PENDING SCREEN
+           Shown when user awaits DM approval
+           ============================================= */
         const AccessPendingScreen = ({ user, onLogout }) => (
             <div className="min-h-screen bg-gradient-to-br from-amber-50 via-stone-100 to-amber-100 flex items-center justify-center">
                 <div className="bg-white bg-opacity-90 rounded-lg shadow-2xl p-8 max-w-md w-full mx-4 text-center" style={{ 
@@ -135,9 +142,10 @@
             </div>
         );
 
-        // =============================================
-        // LOADING SCREEN
-        // =============================================
+        /* =============================================
+           LOADING SCREEN
+           Spinner shown during authentication
+           ============================================= */
         const LoadingScreen = () => (
             <div className="min-h-screen bg-gradient-to-br from-amber-50 via-stone-100 to-amber-100 flex items-center justify-center">
                 <div className="text-center">
@@ -147,9 +155,10 @@
             </div>
         );
 
-        // =============================================
-        // MAIN APP WITH AUTH
-        // =============================================
+        /* =============================================
+           MAIN APP - AUTHENTICATION WRAPPER
+           Handles auth state and renders appropriate screen
+           ============================================= */
         const App = () => {
             const [user, setUser] = useState(null);
             const [userRole, setUserRole] = useState(null);
@@ -209,16 +218,31 @@
             if (loading) return <LoadingScreen />;
             if (!user) return <LoginScreen onLogin={handleLogin} error={authError} />;
             if (!userRole) return <AccessPendingScreen user={user} onLogout={handleLogout} />;
-            return <DnDInteractiveMap user={user} userRole={userRole} onLogout={handleLogout} />;
+            return <Compendium user={user} userRole={userRole} onLogout={handleLogout} />;
         };
 
-        const DnDInteractiveMap = ({ user, userRole, onLogout }) => {
-          const [selectedLocation, setSelectedLocation] = useState(null);
-          const [hoveredNode, setHoveredNode] = useState(null);
-          const [currentMap, setCurrentMap] = useState('world-overview');
+        /* =============================================
+           COMPENDIUM - MAIN APPLICATION
+           ============================================= */
+        const Compendium = ({ user, userRole, onLogout }) => {
+          
+          /* -------------------------------------------
+             STATE MANAGEMENT
+             ------------------------------------------- */
+          
+          // Navigation State
           const [activeTab, setActiveTab] = useState('cartographer');
           const [activeCodexSection, setActiveCodexSection] = useState('lore');
           const [activeFieldGuideTab, setActiveFieldGuideTab] = useState('flora');
+          
+          // Map State
+          const [currentMap, setCurrentMap] = useState('world-overview');
+          const [selectedLocation, setSelectedLocation] = useState(null);
+          const [hoveredNode, setHoveredNode] = useState(null);
+          const [mapTimeOfDay, setMapTimeOfDay] = useState('day');
+          const [nodesVisible, setNodesVisible] = useState(false);
+          
+          // Notes & Folders State
           const [noteCards, setNoteCards] = useState([]);
           const [folders, setFolders] = useState([]);
           const [notesLoading, setNotesLoading] = useState(true);
@@ -231,27 +255,39 @@
           const [isCreatingNote, setIsCreatingNote] = useState(false);
           const [currentNote, setCurrentNote] = useState({ title: '', content: '', folderId: null });
           const [editingNoteId, setEditingNoteId] = useState(null);
-          const [draggedNote, setDraggedNote] = useState(null);
-          const [mapTimeOfDay, setMapTimeOfDay] = useState('day');
-          const [selectedLore, setSelectedLore] = useState(null);
           const [noteSearchQuery, setNoteSearchQuery] = useState('');
           const [expandedNote, setExpandedNote] = useState(null);
           const [autoSaveStatus, setAutoSaveStatus] = useState(null);
           const [noteSortOrder, setNoteSortOrder] = useState('manual');
           const [noteOrder, setNoteOrder] = useState([]);
+          
+          // Drag & Drop State
+          const [draggedNote, setDraggedNote] = useState(null);
           const [dragOverNoteId, setDragOverNoteId] = useState(null);
-          const [nodesVisible, setNodesVisible] = useState(false);
+          const [movingNoteId, setMovingNoteId] = useState(null);
+          
+          // Lore State
+          const [selectedLore, setSelectedLore] = useState(null);
+          
+          // Field Guide State
           const [fieldGuideSearch, setFieldGuideSearch] = useState('');
           const [fieldGuideRarityFilter, setFieldGuideRarityFilter] = useState('all');
           const [fieldGuideHabitatFilter, setFieldGuideHabitatFilter] = useState('all');
-          const [movingNoteId, setMovingNoteId] = useState(null);
+          
+          // Responsive/Mobile State
           const [mobileContentExpanded, setMobileContentExpanded] = useState(false);
           const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
           const [isTablet, setIsTablet] = useState(window.innerWidth > 768 && window.innerWidth <= 1024);
+          
+          // Refs
           const editorRef = React.useRef(null);
           const editorContainerRef = React.useRef(null);
           const easyMDERef = React.useRef(null);
           const autoSaveTimeoutRef = React.useRef(null);
+
+          /* -------------------------------------------
+             EFFECTS - Event Listeners & Data Sync
+             ------------------------------------------- */
 
           // Escape key handler to close modals/windows
           useEffect(() => {
@@ -338,6 +374,10 @@
               }, (err) => console.error('Folders error:', err));
             return () => { notesUnsub(); foldersUnsub(); };
           }, [user]);
+
+          /* -------------------------------------------
+             NOTE MANAGEMENT FUNCTIONS
+             ------------------------------------------- */
 
           // Auto-save function
           const autoSaveNote = async (title, content, folderId) => {
@@ -529,7 +569,7 @@
             }
           };
 
-          // Handle note reordering (works in ALL sort modes)
+          // Handle note reordering
           const handleNoteDragOver = (e, noteId) => {
             e.preventDefault();
             if (draggedNote && draggedNote !== noteId) {
@@ -993,6 +1033,11 @@
             }
           };
 
+          /* --------------------------------------------------------------
+             GAME DATA
+             Map regions, locations, dungeons, lore, pantheon, field guide
+          --------------------------------------------------------------- */
+
           const mapRegions = [
             { id: 'world-overview', name: 'World Overview', category: 'Issolas', image: 'world_maps/world_map.png', dmImage: 'world_maps/world_map_2.png', roles: ['dm', 'adventurer'] },
             { id: 'sirens-song', name: "Siren's Song", category: 'Issolas', image: 'sirens_song_maps/sirens_song_map.png', roles: ['dm', 'adventurer'] },
@@ -1102,26 +1147,26 @@ In taverns where hearths burn too low, travelers trade fragments of stories abou
             ],
             pantheon: {
               theSix: [
-                { name: "Paladine", title: "God of rulers and guardians", description: "Paladine the Platinum Dragon, is the draconic god of good dragons, the north wind and wisdom from the Draconic pantheon. Paladine is the embodiment of all that is good and great. He is the glorious and resplendent lord of good dragons who watches over and encourages his faithful, and serves as a bright and shining paragon of good in opposition to his bitter and twisted sister, Tiamat, the Chromatic Dragon.", domains: "Knowledge, Life", symbol: "Silver triangle", image: 'pantheon_icons/silver_triangle.png' },
-                { name: "Milil", title: "God of poetry and song", description: "Milil is the god of poetry, eloquence, and song. He is a god of creativity and inspiration, of the entire song more than just the lyrics or the music. He represents the finished thought, the result of the process that takes an idea from conception to realization. He is the ideal to which all performers aspire: poised and confident, winningly charismatic, and a source of inspiration for those who listen to him.", domains: "Knowledge", symbol: "Crystal ball containing many kinds of eyes", image: 'pantheon_icons/orb_of_eyes.png' },
-                { name: "Savras", title: "God of divination and fate", description: "Savras is the god of divination and fate, an aloof and inscrutable power who embodies the act of seeing beyond the present moment. To his faithful, Savras is not a god of answers freely given, but of truths revealed through discipline, sacrifice, and insight. He is revered by seers, oracles, astrologers, and those who seek to understand the hidden patterns that govern past, present, and future.", domains: "Light", symbol: "Five-stringed harp made of leaves", image: 'pantheon_icons/leaf_harp.png' },
-                { name: "Lliira", title: "Goddess of joy", description: "Lliira is the goddess of joy, celebration, freedom, and unrestrained emotion. She embodies the simple and profound truth that life is meant to be lived to the fullest, with passion and disregard for needless restraint. Where sorrow long lingers or tyranny smothers, Lliira's influence rises through laughter, dance, music, and acts of spontaneous kindness. The faith of Lliira teaches that joy is not frivolous, but sacred. Her dogma urges followers to celebrate life in all its forms and to remind others that happiness is a virtue worth defending.", domains: "Life", symbol: "Triangle of three-pointed stars", image: 'pantheon_icons/star_triangle.png' },
-                { name: "Eldath", title: "Goddess of peace", description: "Eldath is the goddess of peace, calm waters, and quiet places; she is gentle and contemplative, yet stands in opposition to violence. She represents serenity born of restraint and strength found in stillness. To her followers, peace is not weakness, but a deliberate and sacred choice. Eldath's priests and druids are healers. They inhabit hidden groves, springs, and pools where all may rest without fear, and where no weapon may be drawn in anger.", domains: "Life, Nature", symbol: "Waterfall plunging into still pool", image: 'pantheon_icons/waterfall.png' },
-                { name: "Sune", title: "Goddess of love and beauty", description: "Sune is the goddess of love, beauty, passion, and desire in all their forms. She celebrates all permutations of beauty observes the pursuit of pleasure as a sacred expression of life itself. To Sune and her faithful, love is a transformative force that inspires the innate faculties of the spirit, and all that is born of true passion is worthy of reverence.", domains: "Life, Light", symbol: "Face of a beautiful, red-haired woman", image: 'pantheon_icons/redheaded_woman.png' }
+                { name: "Paladine", title: "God of rulers and guardians", alignment: "Lawful Good", description: "Paladine the Platinum Dragon, is the draconic god of good dragons, the north wind and wisdom from the Draconic pantheon. Paladine is the embodiment of all that is good and great. He is the glorious and resplendent lord of good dragons who watches over and encourages his faithful, and serves as a bright and shining paragon of good in opposition to his bitter and twisted sister, Tiamat, the Chromatic Dragon.", domains: "Knowledge, Life", symbol: "Silver triangle", image: 'pantheon_icons/silver_triangle.png' },
+                { name: "Milil", title: "God of poetry and song", alignment: "Neutral Good", description: "Milil is the god of poetry, eloquence, and song. He is a god of creativity and inspiration, of the entire song more than just the lyrics or the music. He represents the finished thought, the result of the process that takes an idea from conception to realization. He is the ideal to which all performers aspire: poised and confident, winningly charismatic, and a source of inspiration for those who listen to him.", domains: "Knowledge", symbol: "Crystal ball containing many kinds of eyes", image: 'pantheon_icons/orb_of_eyes.png' },
+                { name: "Savras", title: "God of divination and fate", alignment: "Lawful Neutral", description: "Savras is the god of divination and fate, an aloof and inscrutable power who embodies the act of seeing beyond the present moment. To his faithful, Savras is not a god of answers freely given, but of truths revealed through discipline, sacrifice, and insight. He is revered by seers, oracles, astrologers, and those who seek to understand the hidden patterns that govern past, present, and future.", domains: "Light", symbol: "Five-stringed harp made of leaves", image: 'pantheon_icons/leaf_harp.png' },
+                { name: "Lliira", title: "Goddess of joy", alignment: "Chaotic Good", description: "Lliira is the goddess of joy, celebration, freedom, and unrestrained emotion. She embodies the simple and profound truth that life is meant to be lived to the fullest, with passion and disregard for needless restraint. Where sorrow long lingers or tyranny smothers, Lliira's influence rises through laughter, dance, music, and acts of spontaneous kindness. The faith of Lliira teaches that joy is not frivolous, but sacred. Her dogma urges followers to celebrate life in all its forms and to remind others that happiness is a virtue worth defending.", domains: "Life", symbol: "Triangle of three-pointed stars", image: 'pantheon_icons/star_triangle.png' },
+                { name: "Eldath", title: "Goddess of peace", alignment: "Neutral Good", description: "Eldath is the goddess of peace, calm waters, and quiet places; she is gentle and contemplative, yet stands in opposition to violence. She represents serenity born of restraint and strength found in stillness. To her followers, peace is not weakness, but a deliberate and sacred choice. Eldath's priests and druids are healers. They inhabit hidden groves, springs, and pools where all may rest without fear, and where no weapon may be drawn in anger.", domains: "Life, Nature", symbol: "Waterfall plunging into still pool", image: 'pantheon_icons/waterfall.png' },
+                { name: "Sune", title: "Goddess of love and beauty", alignment: "Chaotic Good", description: "Sune is the goddess of love, beauty, passion, and desire in all their forms. She celebrates all permutations of beauty observes the pursuit of pleasure as a sacred expression of life itself. To Sune and her faithful, love is a transformative force that inspires the innate faculties of the spirit, and all that is born of true passion is worthy of reverence.", domains: "Life, Light", symbol: "Face of a beautiful, red-haired woman", image: 'pantheon_icons/redheaded_woman.png' }
               ],
               lesserGods: [
-                { name: "Umberlee", title: "Goddess of the sea", description: "Umberlee is the cruel and capricious goddess of the sea. She is feared rather than loved, placated through offerings by sailor's hoping to earn the sea's favor. Umberlee teaches that the sea may not be tamed, and leverages its power as a force of dominance.", domains: "Tempest", symbol: "Wave curling left and right", image: 'pantheon_icons/twin_waves.png' },
-                { name: "Silvanus", title: "God of nature", description: "Silvanus is the primordial god of wild nature. He is the embodiment of the forest, its beasts, and the very cycles of life itself. He stands a stalwart guardian of the natural order, indifferent and often hostile to those who seek to tip life's balanced scales", domains: "Nature", symbol: "Oak leaf", image: 'pantheon_icons/oak_leaf.png' },
-                { name: "Talos", title: "God of storms", description: "Talos is the god of storms, embodying raw, senseless devastation. He believes destruction is the truest expression of power and his clergy oft revel in the chaos he brings. He is a horrible calamity.", domains: "Tempest", symbol: "Three lightning bolts radiating from a single point", image: 'pantheon_icons/lightning_triad.png' },
-                { name: "Mask", title: "God of thieves", description: "Mask is the god of shadows, deception, and theft, patron to thieves and spies. Mask excites the cunning and imaginative, pulling at the most insidious sides of mortal nature. He believes law exists only as an obstacle to the cunning, a challenge to be exploited for gain and expression of artistry.", domains: "Trickery", symbol: "Black mask", image: 'pantheon_icons/black_mask.png' },
-                { name: "Bhaal", title: "God of murder", description: "Bhaal is the god of murder; death given form. He revels in the act of killing - the planning, the execution. He upholds the doctrine that murder is the ultimate expression of control. To take a life is to elevate the self, and to please Bhaal.", domains: "Death", symbol: "Skull surrounded by a ring of blood droplets", image: 'pantheon_icons/blood_skull.png' },
-                { name: "Azuth", title: "God of wizards", description: "Azuth, the High One, is the god of wizards, arcana, and the disciplines of magic. He represents mastery earned through study and rigorous practice. Through discipline he managed to usurp Savras and claim dominion over the magical arts. Those who follow his path are arbiters of magical conduct, possessing both mastery in ability and restraint. ", domains: "Knowledge", symbol: "Left hand pointing upward, outlined in fire", image: 'pantheon_icons/flame_hand.png' },
-                { name: "Tymora", title: "Goddess of good fortune", description: "Tymora is the rush you feel when flipping a coin. She is the surge of generosity you feel when everything is going your way. She is a fortune that favors the bold and optimistic. 'Chance', to her, is merely an opportunity to seize an otherwise fleeting moment.", domains: "Trickery", symbol: "Face-up coin", image: 'pantheon_icons/face_up_coin.png' },
-                { name: "Kelemvor", title: "God of the dead", description: "Kelemvor is the solemn judge of the dead. He combs the seas of the damned, sternly parsing fear and corruption from his domain. Death is the natural continuation of a life deserving and to deny this continuity is to welcome a punishing damnation.", domains: "Death", symbol: "Upright skeletal arm holding balanced scales", image: 'pantheon_icons/scales.png' },
-                { name: "Gond", title: "God of craft", description: "Gond is the god of craft, artisanship, and the arts of creation. He is the embodiment of the craftsman, the artisan. Above all is progress and process; stagnation is sin. He invites the curious mind to celebrate innovation, experimentation, and the relentless pursuit of improvement.", domains: "Knowledge", symbol: "Toothed cog with four spokes", image: 'pantheon_icons/cog.png' },
-                { name: "Cyric", title: "God of lies", description: "Cyric delights in discord, madness, and strife. He is the suffering caused by broken trust and his influence spreads as quickly as a growing paranoia. His followers are dangerous and unpredictable, enforcing a dogma of chaos through falsehood.", domains: "Trickery", symbol: "White, jawless skull on black or purple sunburst", image: 'pantheon_icons/jawless_skull.png' },
-                { name: "Malar", title: "God of the hunt", description: "Malar is an apex predator. He is simple, savage, and ever-hungry. Outside of the constraints of civilization, survival becomes a question of one's instinct and dominance. To seek to answer this most primitive question is to seek the guiding hand of Malar.", domains: "Nature", symbol: "Clawed paw", image: 'pantheon_icons/paw.png' },
-                { name: "Shar", title: "Goddess of darkness and loss", description: "Shar is a goddess of deep complexity. She permeates the cavities of the mind, filling them with despair, loss, darkness, and the coaxing comforts of oblivion. She will offer solice through the erasure of what troubles you, lulling away your fears and memories.", domains: "Death, Trickery", symbol: "Black disk encircled with a border", image: 'pantheon_icons/black_disk.png' }
+                { name: "Umberlee", title: "Goddess of the sea", alignment: "Chaotic Evil", description: "Umberlee is the cruel and capricious goddess of the sea. She is feared rather than loved, placated through offerings by sailor's hoping to earn the sea's favor. Umberlee teaches that the sea may not be tamed, and leverages its power as a force of dominance.", domains: "Tempest", symbol: "Wave curling left and right", image: 'pantheon_icons/twin_waves.png' },
+                { name: "Silvanus", title: "God of nature", alignment: "True Neutral", description: "Silvanus is the primordial god of wild nature. He is the embodiment of the forest, its beasts, and the very cycles of life itself. He stands a stalwart guardian of the natural order, indifferent and often hostile to those who seek to tip life's balanced scales", domains: "Nature", symbol: "Oak leaf", image: 'pantheon_icons/oak_leaf.png' },
+                { name: "Talos", title: "God of storms", alignment: "Chaotic Evil", description: "Talos is the god of storms, embodying raw, senseless devastation. He believes destruction is the truest expression of power and his clergy oft revel in the chaos he brings. He is a horrible calamity.", domains: "Tempest", symbol: "Three lightning bolts radiating from a single point", image: 'pantheon_icons/lightning_triad.png' },
+                { name: "Mask", title: "God of thieves", alignment: "Chaotic Neutral", description: "Mask is the god of shadows, deception, and theft, patron to thieves and spies. Mask excites the cunning and imaginative, pulling at the most insidious sides of mortal nature. He believes law exists only as an obstacle to the cunning, a challenge to be exploited for gain and expression of artistry.", domains: "Trickery", symbol: "Black mask", image: 'pantheon_icons/black_mask.png' },
+                { name: "Bhaal", title: "God of murder", alignment: "Neutral Evil", description: "Bhaal is the god of murder; death given form. He revels in the act of killing - the planning, the execution. He upholds the doctrine that murder is the ultimate expression of control. To take a life is to elevate the self, and to please Bhaal.", domains: "Death", symbol: "Skull surrounded by a ring of blood droplets", image: 'pantheon_icons/blood_skull.png' },
+                { name: "Azuth", title: "God of wizards", alignment: "Lawful Neutral", description: "Azuth, the High One, is the god of wizards, arcana, and the disciplines of magic. He represents mastery earned through study and rigorous practice. Through discipline he managed to usurp Savras and claim dominion over the magical arts. Those who follow his path are arbiters of magical conduct, possessing both mastery in ability and restraint. ", domains: "Knowledge", symbol: "Left hand pointing upward, outlined in fire", image: 'pantheon_icons/flame_hand.png' },
+                { name: "Tymora", title: "Goddess of good fortune", alignment: "Chaotic Good", description: "Tymora is the rush you feel when flipping a coin. She is the surge of generosity you feel when everything is going your way. She is a fortune that favors the bold and optimistic. 'Chance', to her, is merely an opportunity to seize an otherwise fleeting moment.", domains: "Trickery", symbol: "Face-up coin", image: 'pantheon_icons/face_up_coin.png' },
+                { name: "Kelemvor", title: "God of the dead", alignment: "Lawful Neutral", description: "Kelemvor is the solemn judge of the dead. He combs the seas of the damned, sternly parsing fear and corruption from his domain. Death is the natural continuation of a life deserving and to deny this continuity is to welcome a punishing damnation.", domains: "Death", symbol: "Upright skeletal arm holding balanced scales", image: 'pantheon_icons/scales.png' },
+                { name: "Gond", title: "God of craft", alignment: "True Neutral", description: "Gond is the god of craft, artisanship, and the arts of creation. He is the embodiment of the craftsman, the artisan. Above all is progress and process; stagnation is sin. He invites the curious mind to celebrate innovation, experimentation, and the relentless pursuit of improvement.", domains: "Knowledge", symbol: "Toothed cog with four spokes", image: 'pantheon_icons/cog.png' },
+                { name: "Cyric", title: "God of lies", alignment: "Chaotic Evil", description: "Cyric delights in discord, madness, and strife. He is the suffering caused by broken trust and his influence spreads as quickly as a growing paranoia. His followers are dangerous and unpredictable, enforcing a dogma of chaos through falsehood.", domains: "Trickery", symbol: "White, jawless skull on black or purple sunburst", image: 'pantheon_icons/jawless_skull.png' },
+                { name: "Malar", title: "God of the hunt", alignment: "Chaotic Evil", description: "Malar is an apex predator. He is simple, savage, and ever-hungry. Outside of the constraints of civilization, survival becomes a question of one's instinct and dominance. To seek to answer this most primitive question is to seek the guiding hand of Malar.", domains: "Nature", symbol: "Clawed paw", image: 'pantheon_icons/paw.png' },
+                { name: "Shar", title: "Goddess of darkness and loss", alignment: "Neutral Evil", description: "Shar is a goddess of deep complexity. She permeates the cavities of the mind, filling them with despair, loss, darkness, and the coaxing comforts of oblivion. She will offer solice through the erasure of what troubles you, lulling away your fears and memories.", domains: "Death, Trickery", symbol: "Black disk encircled with a border", image: 'pantheon_icons/black_disk.png' }
               ]
             }
           };
@@ -1259,7 +1304,7 @@ In taverns where hearths burn too low, travelers trade fragments of stories abou
                 ],
                 knownNPCs: [
                   { name: "Cassian Dawnscry", title: "Captain (Human)", importance: "high" },
-                  { name: "Lady Syva Marina", title: "High Priestess (Human, Cleric)", importance: "high" },
+                  { name: "Lady Syva Marina", title: "High Priestess (Human)", importance: "high" },
                   { name: "Lord Antioch Diwalen", title: "Usurper High Priest (Human)", importance: "high" },
                   { name: "Lazuli Brynn", title: "Innkeeper, Puzzler (Dwarf)", importance: "medium" },
                   { name: "Amethyst Brynn", title: "Innkeeper (Dwarf)", importance: "low" },
@@ -1268,7 +1313,7 @@ In taverns where hearths burn too low, travelers trade fragments of stories abou
                 ],
                 history: "Artil began as a seasonal fishing camp founded by coastal clans who followed the great silver shoals that gathered each year where the Sirenic River met the sea. Its natural harbor, formed by the river's branching delta, made it the safest landing on the southern coast of Siren's Song, and temporary huts soon gave way to wharves, smokehouses, and cobblestone docks.",
                 population: { total: "2000", races: "Native: Humans, Elves, Dwarves, Halflings", density: "Dense port town" },
-                climate: { type: "Coastal Temperate", temperature: "Mild with ocean breezes", precipitation: "Frequent light rain", seasons: "Spring, Summer, Fall, Winter" },
+                climate: { type: "Coastal, Forest", temperature: "Mild with ocean breezes", precipitation: "Frequent light rain", seasons: "Spring, Summer, Fall, Winter" },
                 details: "Population: 2000 | NPCs: Cassian Dawnscry, Lazuli Brynn, Lady Syva Marina | Notable: Only port on Siren's Song"
               }
             ],
@@ -1282,12 +1327,11 @@ In taverns where hearths burn too low, travelers trade fragments of stories abou
                 cityMap: 'miligos_maps/port_milibra.jpg', 
                 cityMapNight: 'miligos_maps/port_milibra_night.jpg',
                 knownNPCs: [
-                  { name: "NPC Name", title: "Title/Role", importance: "high" },
-                  { name: "NPC Name", title: "Title/Role", importance: "medium" }
+                  { name: "Unknown", title: "", importance: "high" }
                 ],
                 history: "Pending historical information.",
-                population: { total: "8000", races: "Native: Human, Half-orc, Half-elf, Dwarf, Gnome, Triton", density: "Extremely dense port city" },
-                climate: { type: "Coastal", temperature: "Pending", precipitation: "Frequent rain", seasons: "Spring, Summer, Fall, Winter" },
+                population: { total: "8000", races: "Human, Half-orc, Half-elf, Dwarf, Gnome, Triton", density: "Extremely dense port city" },
+                climate: { type: "Coastal, Forest, Hills", temperature: "Pending", precipitation: "Frequent rain", seasons: "Spring, Summer, Fall, Winter" },
                 details: "Population: 8000 | Trade Hub: Major | Notable: Gateway to the east"
               }
             ]
@@ -1337,17 +1381,29 @@ In taverns where hearths burn too low, travelers trade fragments of stories abou
           const allDungeons = dungeonsByMap[currentMap] || [];
           const dungeons = allDungeons.filter(dng => !dng.roles || dng.roles.includes(userRole));
 
+          /* -------------------------------------------
+             RENDER
+             ------------------------------------------- */
+
           return (
             <div className="w-full min-h-screen bg-gradient-to-br from-amber-50 via-stone-100 to-amber-100">
+              
+              {/* =========================================
+                  STYLES - All CSS for Compendium
+                  ========================================= */}
               <style>{`
+                /* Import Google Fonts */
                 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap');
                 
+                /* ----- Background Textures ----- */
                 .parchment-bg {
                   background-image: linear-gradient(rgba(245, 236, 215, 0.9), rgba(239, 227, 203, 0.9)),
                     repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(139, 115, 85, 0.03) 2px, rgba(139, 115, 85, 0.03) 4px),
                     repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(139, 115, 85, 0.03) 2px, rgba(139, 115, 85, 0.03) 4px);
                   box-shadow: inset 0 2px 20px rgba(139, 115, 85, 0.2), 0 8px 30px rgba(0, 0, 0, 0.15);
                 }
+                
+                /* ----- Map & Location Markers ----- */
                 .map-container {
                   position: relative;
                   border: 4px solid #8b7355;
@@ -1394,6 +1450,8 @@ In taverns where hearths burn too low, travelers trade fragments of stories abou
                 *::-webkit-scrollbar-thumb:hover { background: rgba(139, 115, 85, 0.7); }
                 *::-webkit-scrollbar-corner { background: transparent; }
                 .text-shadow-gold { text-shadow: 2px 2px 4px rgba(212, 175, 55, 0.3); }
+                
+                /* ----- Sidebar & Navigation ----- */
                 .sidebar {
                   width: 280px; position: fixed; left: 0; top: 0; height: 100vh;
                   background: linear-gradient(135deg, #2d1810 0%, #4a2c1a 100%);
@@ -1457,6 +1515,8 @@ In taverns where hearths burn too low, travelers trade fragments of stories abou
                 .editor-content ul, .editor-content ol { margin: 0; padding-left: 0; }
                 .editor-content li { margin-left: 2.5em; padding-left: 0.5em; }
                 .search-highlight { background: rgba(212, 175, 55, 0.5); color: #2d1810; padding: 0 2px; border-radius: 2px; }
+                
+                /* ----- Note Cards & Grid ----- */
                 .note-card {
                   background: rgba(245, 236, 215, 0.9); border: 2px solid #8b7355; border-radius: 0.5rem;
                   padding: 1.5rem; cursor: pointer; transition: all 0.3s; position: relative;
@@ -1532,6 +1592,8 @@ In taverns where hearths burn too low, travelers trade fragments of stories abou
                   color: #2d1810; cursor: pointer;
                 }
                 .note-sort-select:focus { outline: none; border-color: #d4af37; }
+                
+                /* ----- Expanded Note Modal ----- */
                 .expanded-note-overlay {
                   position: fixed; top: 0; left: 280px; right: 0; bottom: 0; 
                   background: rgba(0, 0, 0, 0.85); z-index: 200; 
@@ -1691,6 +1753,8 @@ In taverns where hearths burn too low, travelers trade fragments of stories abou
                   color: #2d1810; margin-bottom: 1rem;
                 }
                 .note-title-input:focus { outline: none; border-color: #d4af37; box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.2); }
+                
+                /* ----- Folder Sidebar ----- */
                 .folder-sidebar {
                   width: 250px; background: rgba(139, 115, 85, 0.1); border-right: 2px solid #8b7355;
                   padding: 1rem; overflow-y: auto; max-height: calc(100vh - 2rem);
@@ -1776,6 +1840,8 @@ In taverns where hearths burn too low, travelers trade fragments of stories abou
                   color: #2d1810; cursor: pointer;
                 }
                 .field-guide-filter:focus { outline: none; border-color: #d4af37; }
+                
+                /* ----- Field Guide (Flora & Fauna) ----- */
                 .field-guide-entry {
                   background: rgba(245, 236, 215, 0.6); border-radius: 0.5rem;
                   padding: 1rem; margin-bottom: 0.75rem; transition: all 0.3s;
@@ -1829,6 +1895,8 @@ In taverns where hearths burn too low, travelers trade fragments of stories abou
                     z-index: 99;
                   }
                 }
+                
+                /* ----- Customs (House Rules) Tab ----- */
                 .customs-container {
                   height: calc(100vh - 2rem); display: flex; flex-direction: column;
                   padding: 1rem; box-sizing: border-box;
@@ -1899,6 +1967,8 @@ In taverns where hearths burn too low, travelers trade fragments of stories abou
                   .customs-rule-wide { grid-column: span 1; }
                   .customs-subrules-row { flex-direction: column; }
                 }
+                
+                /* ----- Lore Cards & Narrative Modal ----- */
                 .lore-card {
                   background: rgba(245, 236, 215, 0.8); border: 2px solid #8b7355; border-radius: 0.5rem;
                   padding: 1.5rem; cursor: pointer; transition: all 0.3s; position: relative;
@@ -2035,6 +2105,112 @@ In taverns where hearths burn too low, travelers trade fragments of stories abou
                 .note-content img { max-width: 100%; height: auto; }
                 .npc-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }
                 .npc-grid-item { padding: 0.5rem 0.75rem; background: rgba(245, 236, 215, 0.6); border: 1px solid #8b7355; border-radius: 0.25rem; text-align: center; font-family: 'Crimson Text', serif; font-size: 0.95rem; color: #2d1810; }
+                .npc-grid-detailed { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; }
+                .npc-card {
+                  position: relative; padding: 0.75rem; padding-left: 1.5rem;
+                  background: rgba(245, 236, 215, 0.6); border: 1px solid #8b7355; border-radius: 0.25rem;
+                }
+                .npc-importance-dot {
+                  position: absolute; left: 0.5rem; top: 50%; transform: translateY(-50%);
+                  width: 8px; height: 8px; border-radius: 50%;
+                }
+                .npc-importance-dot.high { background: #dc2626; }
+                .npc-importance-dot.medium { background: #ca8a04; }
+                .npc-importance-dot.low { background: #16a34a; }
+                .npc-name { font-family: 'Crimson Text', serif; font-size: 1rem; font-weight: 600; color: #2d1810; }
+                .npc-details { font-family: 'Crimson Text', serif; font-size: 0.85rem; color: #6b5a4a; }
+                .npc-title { display: inline; }
+                .npc-race { display: inline; }
+                .npc-race::before { content: ' • '; }
+                @media (max-width: 900px) { .npc-grid-detailed { grid-template-columns: repeat(2, 1fr); } }
+                @media (max-width: 600px) { .npc-grid-detailed { grid-template-columns: 1fr; } }
+                
+                /* ----- Deity/Pantheon Cards ----- */
+                .deity-grid { display: flex; flex-direction: column; gap: 1rem; }
+                .deity-card {
+                  background: rgba(245, 236, 215, 0.5); border: 2px solid #8b7355; border-radius: 0.5rem;
+                  padding: 1.25rem; transition: all 0.3s;
+                  display: flex; flex-direction: column; min-height: 280px;
+                }
+                .deity-card:hover { transform: scale(1.01); box-shadow: 0 6px 16px rgba(139, 115, 85, 0.25); }
+                .deity-header { display: flex; gap: 1rem; margin-bottom: 0.75rem; }
+                .deity-info { flex: 1; }
+                .deity-name { font-family: 'Cinzel', serif; font-size: 1.5rem; font-weight: 700; color: #8b5a00; margin-bottom: 0.25rem; }
+                .deity-title { font-family: 'Crimson Text', serif; font-size: 1rem; color: #6b5a4a; font-style: italic; }
+                .deity-image { width: 80px; height: 80px; object-fit: cover; border-radius: 0.5rem; border: 2px solid #8b7355; flex-shrink: 0; }
+                .deity-meta { font-family: 'Crimson Text', serif; font-size: 0.9rem; color: #5a4a3a; margin-bottom: 0.75rem; }
+                .deity-meta p { margin: 0.2rem 0; }
+                .deity-separator { height: 1px; background: linear-gradient(to right, transparent, #8b7355, transparent); margin-bottom: 0.75rem; }
+                .deity-description { font-family: 'Crimson Text', serif; font-size: 0.95rem; color: #2d1810; line-height: 1.6; flex: 1; }
+                
+                /* ----- Info Tiles (Population & Climate) ----- */
+                .info-tiles-grid {
+                  display: grid;
+                  grid-template-columns: repeat(2, 1fr);
+                  gap: 1rem;
+                  margin-bottom: 1.5rem;
+                }
+                .info-tiles-grid.single-tile {
+                  grid-template-columns: 1fr;
+                }
+                .info-tile {
+                  background: rgba(210, 165, 110, 0.15);
+                  border: 1px solid rgba(180, 130, 70, 0.4);
+                  border-radius: 0.5rem;
+                  padding: 1rem;
+                  transition: all 0.3s;
+                }
+                .info-tile:hover {
+                  background: rgba(210, 165, 110, 0.25);
+                  box-shadow: 0 4px 12px rgba(180, 130, 70, 0.15);
+                }
+                .info-tile.full-width {
+                  grid-column: 1 / -1;
+                }
+                .info-tile-header {
+                  display: flex;
+                  align-items: center;
+                  gap: 0.6rem;
+                  margin-bottom: 0.75rem;
+                  padding-bottom: 0.5rem;
+                  border-bottom: 1px solid rgba(180, 130, 70, 0.3);
+                }
+                .info-tile-icon {
+                  width: 22px;
+                  height: 22px;
+                  stroke: rgba(180, 130, 70, 0.6);
+                  stroke-width: 1.5;
+                  fill: none;
+                }
+                .info-tile-icon .bg-fill {
+                  fill: #f0e4d4;
+                  stroke: none;
+                }
+                .info-tile-title {
+                  font-family: 'Cinzel', serif;
+                  font-size: 1.1rem;
+                  font-weight: 600;
+                  color: #8b5a00;
+                  margin: 0;
+                }
+                .info-tile-content {
+                  font-family: 'Crimson Text', serif;
+                  font-size: 0.9rem;
+                  color: #2d1810;
+                }
+                .info-tile-content p {
+                  margin: 0.35rem 0;
+                  line-height: 1.4;
+                }
+                .info-tile-content strong {
+                  color: #5a4a3a;
+                }
+                @media (max-width: 600px) {
+                  .info-tiles-grid {
+                    grid-template-columns: 1fr;
+                  }
+                }
+                
                 .note-folder-select {
                   position: absolute; bottom: 0; left: 100%; background: rgba(245, 236, 215, 0.98);
                   border: 2px solid #8b7355; border-radius: 0.5rem; z-index: 100; box-shadow: 0 4px 12px rgba(0,0,0,0.3);
@@ -2057,6 +2233,11 @@ In taverns where hearths burn too low, travelers trade fragments of stories abou
                 @media (max-width: 1024px) { .move-note-btn { display: block; } }
                 @media (pointer: coarse) { .move-note-btn { display: block; } }
                 @media (hover: none) { .move-note-btn { display: block; } }
+                
+                /* =========================================
+                   RESPONSIVE STYLES
+                   Tablet and Mobile breakpoints
+                   ========================================= */
                 
                 /* Tablet Portrait - 768px to 1024px */
                 @media (max-width: 1024px) and (min-width: 769px) {
@@ -2223,7 +2404,7 @@ In taverns where hearths burn too low, travelers trade fragments of stories abou
                 }
               `}</style>
 
-              {/* Mobile Navigation - only visible on mobile */}
+              {/* Mobile Navigation */}
               {isMobile && !mobileContentExpanded && (
                 <div className="sidebar">
                   <div className="mobile-user-bar">
@@ -2340,7 +2521,7 @@ In taverns where hearths burn too low, travelers trade fragments of stories abou
                       <div className="customs-rule">
                         <div className="customs-rule-header">
                           <span className="customs-rule-number">2</span>
-                          <h3>Herbalism, Alchemy & Poison</h3>
+                          <h3>Herbalism & Alchemy</h3>
                         </div>
                         <p>Herbalism, Alchemy, and Poison homebrew rules are in effect.</p>
                       </div>
@@ -2351,7 +2532,7 @@ In taverns where hearths burn too low, travelers trade fragments of stories abou
                           <span className="customs-rule-number">3</span>
                           <h3>Arcane Static</h3>
                         </div>
-                        <p>When two spellcasters are within 10 feet (in certain regions), wild magic sparks between them. Both roll a d6—on matching numbers, something random happens.</p>
+                        <p>When two spellcasters are within 10 feet (in certain regions), wild magic sparks between them. Both roll a d6 - on matching numbers, something random happens.</p>
                       </div>
 
                       {/* Rule 4 */}
@@ -2419,7 +2600,7 @@ In taverns where hearths burn too low, travelers trade fragments of stories abou
                           )}
                           <div className="relative">
                             <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-600 to-amber-800 border-4 border-amber-200 shadow-lg flex items-center justify-center">
-                              <MapPin className="w-6 h-6 text-amber-50" />
+                              <MapPinIcon className="w-6 h-6 text-amber-50" />
                             </div>
                             {hoveredNode === location.id && (
                               <div className="absolute top-full mt-2 left-1/2 transform -translate-x-1/2 whitespace-nowrap">
@@ -2439,7 +2620,7 @@ In taverns where hearths burn too low, travelers trade fragments of stories abou
                           )}
                           <div className="relative">
                             <div className="w-12 h-12 rounded-full bg-gradient-to-br from-slate-500 to-slate-700 border-4 border-slate-300 shadow-lg flex items-center justify-center">
-                              <Skull className="w-6 h-6 text-slate-100" />
+                              <SkullIcon className="w-6 h-6 text-slate-100" />
                             </div>
                             {hoveredNode === dungeon.id && (
                               <div className="absolute top-full mt-2 left-1/2 transform -translate-x-1/2 whitespace-nowrap">
@@ -2475,56 +2656,54 @@ In taverns where hearths burn too low, travelers trade fragments of stories abou
                           {/* The Six Column */}
                           <div>
                             <h2 className="text-3xl font-bold text-amber-900 mb-6 text-center" style={{ fontFamily: 'Cinzel, serif' }}>The Six</h2>
-                            {codexData.pantheon.theSix.map((deity, index) => (
-                              <div key={index} className="codex-section">
-                                <div className="flex gap-4 mb-3" style={{ minHeight: '120px' }}>
-                                  <div className="flex-1 flex flex-col justify-between">
-                                    <div>
-                                      <h3 className="text-2xl font-bold text-amber-900 mb-1" style={{ fontFamily: 'Cinzel, serif' }}>{deity.name}</h3>
-                                      <h4 className="text-lg text-amber-800 mb-2 italic" style={{ fontFamily: 'Crimson Text, serif' }}>{deity.title}</h4>
+                            <div className="deity-grid">
+                              {codexData.pantheon.theSix.map((deity, index) => (
+                                <div key={index} className="deity-card">
+                                  <div className="deity-header">
+                                    <div className="deity-info">
+                                      <h3 className="deity-name">{deity.name}</h3>
+                                      <h4 className="deity-title">{deity.title}</h4>
                                     </div>
-                                    <div className="text-sm text-amber-800" style={{ fontFamily: 'Crimson Text, serif' }}>
-                                      <p><strong>Domains:</strong> {deity.domains}</p>
-                                      <p><strong>Symbol:</strong> {deity.symbol}</p>
-                                    </div>
+                                    {deity.image && (
+                                      <img src={deity.image} alt={deity.name} className="deity-image" />
+                                    )}
                                   </div>
-                                  {deity.image && (
-                                    <div className="flex-shrink-0">
-                                      <img src={deity.image} alt={deity.name} className="w-28 h-28 object-cover rounded-lg border-2 border-amber-700" />
-                                    </div>
-                                  )}
+                                  <div className="deity-meta">
+                                    <p><strong>Alignment:</strong> {deity.alignment}</p>
+                                    <p><strong>Domains:</strong> {deity.domains}</p>
+                                    <p><strong>Symbol:</strong> {deity.symbol}</p>
+                                  </div>
+                                  <div className="deity-separator"></div>
+                                  <p className="deity-description">{deity.description}</p>
                                 </div>
-                                <div className="h-px bg-gradient-to-r from-amber-600 via-amber-400 to-amber-600 mb-3"></div>
-                                <p className="text-amber-950 leading-relaxed" style={{ fontFamily: 'Crimson Text, serif', fontSize: '0.95rem' }}>{deity.description}</p>
-                              </div>
-                            ))}
+                              ))}
+                            </div>
                           </div>
                           {/* Lesser Gods Column */}
                           <div>
                             <h2 className="text-3xl font-bold text-amber-900 mb-6 text-center" style={{ fontFamily: 'Cinzel, serif' }}>Lesser Gods</h2>
-                            {codexData.pantheon.lesserGods.map((deity, index) => (
-                              <div key={index} className="codex-section">
-                                <div className="flex gap-4 mb-3" style={{ minHeight: '120px' }}>
-                                  <div className="flex-1 flex flex-col justify-between">
-                                    <div>
-                                      <h3 className="text-2xl font-bold text-amber-900 mb-1" style={{ fontFamily: 'Cinzel, serif' }}>{deity.name}</h3>
-                                      <h4 className="text-lg text-amber-800 mb-2 italic" style={{ fontFamily: 'Crimson Text, serif' }}>{deity.title}</h4>
+                            <div className="deity-grid">
+                              {codexData.pantheon.lesserGods.map((deity, index) => (
+                                <div key={index} className="deity-card">
+                                  <div className="deity-header">
+                                    <div className="deity-info">
+                                      <h3 className="deity-name">{deity.name}</h3>
+                                      <h4 className="deity-title">{deity.title}</h4>
                                     </div>
-                                    <div className="text-sm text-amber-800" style={{ fontFamily: 'Crimson Text, serif' }}>
-                                      <p><strong>Domains:</strong> {deity.domains}</p>
-                                      <p><strong>Symbol:</strong> {deity.symbol}</p>
-                                    </div>
+                                    {deity.image && (
+                                      <img src={deity.image} alt={deity.name} className="deity-image" />
+                                    )}
                                   </div>
-                                  {deity.image && (
-                                    <div className="flex-shrink-0">
-                                      <img src={deity.image} alt={deity.name} className="w-28 h-28 object-cover rounded-lg border-2 border-amber-700" />
-                                    </div>
-                                  )}
+                                  <div className="deity-meta">
+                                    <p><strong>Alignment:</strong> {deity.alignment}</p>
+                                    <p><strong>Domains:</strong> {deity.domains}</p>
+                                    <p><strong>Symbol:</strong> {deity.symbol}</p>
+                                  </div>
+                                  <div className="deity-separator"></div>
+                                  <p className="deity-description">{deity.description}</p>
                                 </div>
-                                <div className="h-px bg-gradient-to-r from-amber-600 via-amber-400 to-amber-600 mb-3"></div>
-                                <p className="text-amber-950 leading-relaxed" style={{ fontFamily: 'Crimson Text, serif', fontSize: '0.95rem' }}>{deity.description}</p>
-                              </div>
-                            ))}
+                              ))}
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -2882,7 +3061,7 @@ In taverns where hearths burn too low, travelers trade fragments of stories abou
                     {/* Right Panel - Information */}
                     <div className="parchment-bg rounded-lg p-8 ornate-border overflow-y-auto" style={{ width: '50%' }}>
                       <button onClick={() => setSelectedLocation(null)} className="float-right p-2 hover:bg-amber-200 rounded-full transition-colors">
-                        <X className="w-6 h-6 text-amber-900" />
+                        <CloseIcon className="w-6 h-6 text-amber-900" />
                       </button>
                       <h2 className="text-4xl font-bold text-amber-900 mb-4 pr-12 text-shadow-gold" style={{ fontFamily: 'Cinzel, serif' }}>{selectedLocation.name}</h2>
                       <div className="flex items-center gap-3 mb-6">
@@ -2902,19 +3081,17 @@ In taverns where hearths burn too low, travelers trade fragments of stories abou
                               ))}
                             </div>
                           ) : (
-                            <div className="space-y-2">
+                            <div className="npc-grid-detailed">
                               {selectedLocation.knownNPCs.sort((a, b) => {
                                 const importanceOrder = { high: 1, medium: 2, low: 3 };
                                 return importanceOrder[a.importance] - importanceOrder[b.importance];
                               }).map((npc, index) => (
-                                <div key={index} className="flex items-center gap-3 p-2 bg-amber-50 bg-opacity-50 rounded">
-                                  <div className={`w-2 h-2 rounded-full ${npc.importance === 'high' ? 'bg-red-600' : npc.importance === 'medium' ? 'bg-yellow-600' : 'bg-green-600'}`}></div>
-                                  <div>
-                                    <span className="font-semibold text-amber-950" style={{ fontFamily: 'Crimson Text, serif' }}>{npc.name}</span>
-                                    <span className="text-amber-800 ml-2" style={{ fontFamily: 'Crimson Text, serif' }}>— {npc.title}</span>
-                                    {npc.race && (
-                                      <span className="text-amber-700 ml-2" style={{ fontFamily: 'Crimson Text, serif' }}>({npc.race}{npc.class ? `, ${npc.class}` : ''})</span>
-                                    )}
+                                <div key={index} className="npc-card">
+                                  <div className={`npc-importance-dot ${npc.importance === 'high' ? 'high' : npc.importance === 'medium' ? 'medium' : 'low'}`}></div>
+                                  <div className="npc-name">{npc.name}</div>
+                                  <div className="npc-details">
+                                    {npc.title && <span className="npc-title">{npc.title}</span>}
+                                    {npc.race && <span className="npc-race">{npc.race}{npc.class ? `, ${npc.class}` : ''}</span>}
                                   </div>
                                 </div>
                               ))}
@@ -2930,30 +3107,59 @@ In taverns where hearths burn too low, travelers trade fragments of stories abou
                         </div>
                       )}
 
-                      {selectedLocation.population && (
-                        <div className="mb-6">
-                          <h3 className="text-2xl font-bold text-amber-900 mb-3" style={{ fontFamily: 'Cinzel, serif' }}>Population</h3>
-                          <div className="bg-amber-50 bg-opacity-50 rounded p-4 space-y-2">
-                            <p className="text-amber-950" style={{ fontFamily: 'Crimson Text, serif' }}><strong>Total:</strong> {selectedLocation.population.total}</p>
-                            <p className="text-amber-950" style={{ fontFamily: 'Crimson Text, serif' }}><strong>Native Races:</strong> {selectedLocation.population.races}</p>
-                            <p className="text-amber-950" style={{ fontFamily: 'Crimson Text, serif' }}><strong>Density:</strong> {selectedLocation.population.density}</p>
-                          </div>
-                        </div>
-                      )}
+                      {(selectedLocation.population || selectedLocation.climate) && (
+                        <div className={`info-tiles-grid ${!selectedLocation.population && selectedLocation.climate ? 'single-tile' : ''}`}>
+                          {selectedLocation.population && (
+                            <div className="info-tile">
+                              <div className="info-tile-header">
+                                <svg className="info-tile-icon" viewBox="0 0 24 24">
+                                  <circle cx="5" cy="8" r="2.5"/>
+                                  <path d="M5 11.5c-2.5 0-4 2-4 4.5v4h8v-4c0-2.5-1.5-4.5-4-4.5z"/>
+                                  <circle cx="19" cy="8" r="2.5"/>
+                                  <path d="M19 11.5c2.5 0 4 2 4 4.5v4h-8v-4c0-2.5 1.5-4.5 4-4.5z"/>
+                                  <circle className="bg-fill" cx="12" cy="6" r="3.5"/>
+                                  <path className="bg-fill" d="M12 9.5c-3.5 0-5.5 2.5-5.5 5.5v5.5h11v-5.5c0-3-2-5.5-5.5-5.5z"/>
+                                  <circle cx="12" cy="6" r="3"/>
+                                  <path d="M12 10c-3 0-5 2.5-5 5.5v4.5h10v-4.5c0-3-2-5.5-5-5.5z"/>
+                                </svg>
+                                <h3 className="info-tile-title">Population</h3>
+                              </div>
+                              <div className="info-tile-content">
+                                <p><strong>Total:</strong> {selectedLocation.population.total}</p>
+                                <p><strong>Races:</strong> {selectedLocation.population.races}</p>
+                                <p><strong>Density:</strong> {selectedLocation.population.density}</p>
+                              </div>
+                            </div>
+                          )}
 
-                      {selectedLocation.climate && (
-                        <div className="mb-6">
-                          <h3 className="text-2xl font-bold text-amber-900 mb-3" style={{ fontFamily: 'Cinzel, serif' }}>Climate</h3>
-                          <div className="bg-amber-50 bg-opacity-50 rounded p-4 space-y-2">
-                            <p className="text-amber-950" style={{ fontFamily: 'Crimson Text, serif' }}><strong>Type:</strong> {selectedLocation.climate.type}</p>
-                            <p className="text-amber-950" style={{ fontFamily: 'Crimson Text, serif' }}><strong>Temperature:</strong> {selectedLocation.climate.temperature}</p>
-                            {selectedLocation.climate.precipitation && (
-                              <p className="text-amber-950" style={{ fontFamily: 'Crimson Text, serif' }}><strong>Precipitation:</strong> {selectedLocation.climate.precipitation}</p>
-                            )}
-                            {selectedLocation.climate.seasons && (
-                              <p className="text-amber-950" style={{ fontFamily: 'Crimson Text, serif' }}><strong>Seasons:</strong> {selectedLocation.climate.seasons}</p>
-                            )}
-                          </div>
+                          {selectedLocation.climate && (
+                            <div className={`info-tile ${!selectedLocation.population ? 'full-width' : ''}`}>
+                              <div className="info-tile-header">
+                                <svg className="info-tile-icon" viewBox="0 0 24 24">
+                                  <path d="M12 2v2"/>
+                                  <path d="M12 20v2"/>
+                                  <path d="m4.93 4.93 1.41 1.41"/>
+                                  <path d="m17.66 17.66 1.41 1.41"/>
+                                  <path d="M2 12h2"/>
+                                  <path d="M20 12h2"/>
+                                  <path d="m6.34 17.66-1.41 1.41"/>
+                                  <path d="m19.07 4.93-1.41 1.41"/>
+                                  <circle cx="12" cy="12" r="4"/>
+                                </svg>
+                                <h3 className="info-tile-title">Climate</h3>
+                              </div>
+                              <div className="info-tile-content">
+                                <p><strong>Type:</strong> {selectedLocation.climate.type}</p>
+                                <p><strong>Temperature:</strong> {selectedLocation.climate.temperature}</p>
+                                {selectedLocation.climate.precipitation && (
+                                  <p><strong>Precipitation:</strong> {selectedLocation.climate.precipitation}</p>
+                                )}
+                                {selectedLocation.climate.seasons && (
+                                  <p><strong>Seasons:</strong> {selectedLocation.climate.seasons}</p>
+                                )}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       )}
 
@@ -2970,7 +3176,7 @@ In taverns where hearths burn too low, travelers trade fragments of stories abou
                     <div className="lore-narrative-header">
                       <h1>{selectedLore.title}</h1>
                       <button className="lore-narrative-close" onClick={() => setSelectedLore(null)}>
-                        <X className="w-5 h-5" />
+                        <CloseIcon className="w-5 h-5" />
                       </button>
                     </div>
                     <div className="lore-narrative-content">
@@ -2988,7 +3194,7 @@ In taverns where hearths burn too low, travelers trade fragments of stories abou
                     <div className="expanded-note-header">
                       <h1 className="expanded-note-title">{expandedNote.title || 'Untitled Note'}</h1>
                       <button className="expanded-note-close" onClick={() => setExpandedNote(null)}>
-                        <X className="w-5 h-5" />
+                        <CloseIcon className="w-5 h-5" />
                       </button>
                     </div>
                     <div className="expanded-note-content" dangerouslySetInnerHTML={{ __html: renderMarkdown(expandedNote.content) }}></div>
